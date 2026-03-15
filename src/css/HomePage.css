@@ -1,0 +1,46 @@
+/* HomePage.css - Styles for TripGenie Home Page */
+
+.tripgenie-home-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #6dd5ed 0%, #2193b0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tripgenie-home-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(33, 147, 176, 0.15);
+  padding: 48px 32px;
+}
+
+.tripgenie-logo {
+  width: 120px;
+  height: auto;
+}
+
+.tripgenie-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #2193b0;
+  margin-bottom: 16px;
+}
+
+.tripgenie-subtitle {
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.tripgenie-get-started {
+  font-size: 1.15rem;
+  padding: 12px 36px;
+  border-radius: 30px;
+  background: linear-gradient(90deg, #6dd5ed 0%, #2193b0 100%);
+  border: none;
+  transition: background 0.2s;
+}
+
+.tripgenie-get-started:hover {
+  background: linear-gradient(90deg, #2193b0 0%, #6dd5ed 100%);
+}
