@@ -1,6 +1,7 @@
 import React from 'react';
 import { Nav } from 'react-bootstrap';
 import { NavLink } from 'react-router-dom';
+import '../../css/NavTabs.css';
 
 const tabs = [
   { to: '/', label: <><span role="img" aria-label="Home">🏠</span> Home</> },

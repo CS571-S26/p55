@@ -1,0 +1,28 @@
+/* Header/Navbar styles */
+.tripgenie-navbar {
+  box-shadow: 0 2px 8px rgba(33,147,176,0.08);
+  border-radius: 0 0 16px 16px;
+  width: 100vw;
+  left: 0;
+  top: 0;
+  position: relative;
+  z-index: 10;
+  background: #fff !important;
+}
+
+.tripgenie-navbar-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #2193b0;
+}
+
+.tripgenie-navbar-logo {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.tripgenie-navbar-title {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #2193b0;
+}

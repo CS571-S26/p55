@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Modal } from 'react-bootstrap';
 import CardSwiper from './CardSwiper';
 import { getCityImage } from './cityImages';
+import '../../css/HomePage.css';
+import destinationsData from '../../assets/Worldwide_Travel_Cities.json';
 
 const HomePage = () => {
   const [showModal, setShowModal] = useState(true);
@@ -18,26 +20,17 @@ const HomePage = () => {
 
   // Load destinations from JSON file
   useEffect(() => {
-    async function fetchDestinations() {
-      try {
-        const res = await fetch('src/assets/Worldwide Travel Cities Dataset (Ratings and Climate).json');
-        const data = await res.json();
-        // Map to CardSwiper format
-        const mapped = data.slice(0, 12).map((d) => ({
-          city: d.city,
-          country: d.country,
-          description: d.short_description,
-          image: getCityImage(d.city),
-          bestTime: undefined, // Could be derived from avg_temp_monthly
-          cost: d.budget_level,
-          attractions: undefined, // Placeholder
-        }));
-        setDestinations(mapped);
-      } catch (e) {
-        setDestinations([]);
-      }
-    }
-    fetchDestinations();
+    // Map to CardSwiper format
+    const mapped = destinationsData.slice(0, 12).map((d) => ({
+      city: d.city,
+      country: d.country,
+      description: d.short_description,
+      image: getCityImage(d.city),
+      bestTime: undefined, // Could be derived from avg_temp_monthly
+      cost: d.budget_level,
+      attractions: undefined, // Placeholder
+    }));
+    setDestinations(mapped);
   }, []);
 
   const handleGetStarted = () => {

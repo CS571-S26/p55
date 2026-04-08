@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Navbar, Container } from 'react-bootstrap';
 import logo from '../../assets/logo.png';
 import NavTabs from './NavTabs';
+import '../../css/Layout.css';
 
 const Layout = () => (
   <>
