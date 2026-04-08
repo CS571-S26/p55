@@ -10,26 +10,16 @@ const Explore = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [showSwiper, setShowSwiper] = useState(false);
 
-  // Helper to call Gemini API
+  // Helper to call backend Gemini proxy
   async function getGeminiRecommendations(userInput) {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const endpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
-
-    const prompt = `Given the following travel destinations data (as JSON array), and the user's preferences, recommend the top 8 cities.\n\nUser preferences: ${userInput}\n\nDestinations data:\n${JSON.stringify(destinationsData.slice(0, 40))}\n\nReturn a JSON array of objects with keys: city, country, description, budget_level.`;
-
-    const body = {
-      contents: [
-        { parts: [{ text: prompt }] }
-      ]
-    };
-
-    const res = await fetch(endpoint, {
+    const res = await fetch('http://localhost:5001/api/gemini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        userInput,
+        destinationsData: destinationsData.slice(0, 40)
+      })
     });
-
     if (!res.ok) throw new Error('Gemini API error');
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
