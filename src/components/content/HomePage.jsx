@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Modal } from 'react-bootstrap';
 import CardSwiper from './CardSwiper';
 import { getCityImage } from './cityImages';
@@ -7,15 +8,18 @@ import destinationsData from '../../assets/Worldwide_Travel_Cities.json';
 
 const HomePage = () => {
   const [showModal, setShowModal] = useState(true);
+  const navigate = useNavigate();
   const [destinations, setDestinations] = useState([]);
   const [showSwiper, setShowSwiper] = useState(false);
 
   const handleClose = () => setShowModal(false);
-  const handleSignIn = () => {
+  const handleSignUp = () => {
     setShowModal(false);
+    navigate('/profile/signup');
   };
   const handleLogin = () => {
     setShowModal(false);
+    navigate('/profile/login');
   };
 
   // Load destinations from JSON file
@@ -82,7 +86,7 @@ const HomePage = () => {
           </Modal.Header>
           <Modal.Body className="text-center">
             <p>Sign in or log in to get started planning your next adventure!</p>
-            <Button variant="success" className="me-2" onClick={handleSignIn}>
+            <Button variant="success" className="me-2" onClick={handleSignUp}>
               Sign Up
             </Button>
             <Button variant="outline-primary" onClick={handleLogin}>
