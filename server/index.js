@@ -2,6 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -34,6 +40,101 @@ app.post('/api/gemini', async (req, res) => {
     if (!response.ok) throw new Error('Gemini API error');
     const data = await response.json();
     res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    const { data, error } = await supabase.auth.signUpWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ user: data.user, session: data.session });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ user: data.user, session: data.session });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/user/preferences', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verify JWT token with Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    const { budget, travelStyle, pace, duration, interests, accessibility } = req.body;
+
+    if (!budget || !travelStyle || !pace || !duration) {
+      return res.status(400).json({ error: 'Missing required preference fields' });
+    }
+
+    // Save preferences to Supabase user_metadata or a separate preferences table
+    const { error: updateError } = await supabase.auth.updateUser(
+      {
+        data: {
+          preferences: {
+            budget,
+            travelStyle,
+            pace,
+            duration,
+            interests: interests || [],
+            accessibility: accessibility || 'none'
+          }
+        }
+      },
+      { token }
+    );
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({ success: true, message: 'Preferences saved successfully' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
