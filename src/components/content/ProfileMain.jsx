@@ -3,21 +3,29 @@ import React, { useState, useEffect } from 'react';
 const ProfileMain = () => {
   const [user, setUser] = useState(null);
   const [preferences, setPreferences] = useState({
-    budget: 'moderate',
-    travelStyle: 'balanced',
-    pace: 'moderate',
+    budget: 'Moderate',
+    travelStyle: 'Balanced',
+    pace: 'Moderate',
     duration: '7-10',
     interests: [],
-    accessibility: 'none',
+    accessibility: [],
   });
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
+
+  // Accessibility options
+  const accessibilityOptions = [
+    'Mobility assistance',
+    'Hearing assistance',
+    'Visual assistance'
+  ];
 
   // Interest options
   const interestOptions = [
     'Adventure', 'Culture', 'Food', 'Nature', 'History',
-    'beaches', 'mountains', 'museums', 'nightlife', 'shopping'
+    'Beaches', 'Mountains', 'Museums', 'Nightlife', 'Shopping'
   ];
 
   useEffect(() => {
@@ -25,13 +33,50 @@ const ProfileMain = () => {
     if (userData) {
       setUser(JSON.parse(userData));
     }
-
-    // Load saved preferences from localStorage
-    const savedPrefs = localStorage.getItem('travelPreferences');
-    if (savedPrefs) {
-      setPreferences(JSON.parse(savedPrefs));
-    }
   }, []);
+
+  useEffect(() => {
+    setIsLoadingPreferences(true);
+    if (!user) return;
+
+    // Fetch preferences from database if logged in
+    const authToken = localStorage.getItem('authToken');
+    if (authToken) {
+      const fetchPreferences = async () => {
+        try {
+          const response = await fetch('http://localhost:5001/api/user/preferences', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setPreferences(data);
+          } else {
+            // Fall back to localStorage if API call fails
+            const savedPrefs = localStorage.getItem('travelPreferences');
+            if (savedPrefs) {
+              setPreferences(JSON.parse(savedPrefs));
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching preferences:', err);
+          // Fall back to localStorage if fetch fails
+          const savedPrefs = localStorage.getItem('travelPreferences');
+          if (savedPrefs) {
+            setPreferences(JSON.parse(savedPrefs));
+          }
+        } finally {
+          setIsLoadingPreferences(false);
+        }
+      };
+
+      fetchPreferences();
+    }
+  }, [user]);
 
   const handlePreferenceChange = (field, value) => {
     setPreferences(prev => ({
@@ -46,6 +91,15 @@ const ProfileMain = () => {
       interests: prev.interests.includes(interest)
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
+    }));
+  };
+
+  const handleAccessibilityToggle = (option) => {
+    setPreferences(prev => ({
+      ...prev,
+      accessibility: prev.accessibility.includes(option)
+        ? prev.accessibility.filter(a => a !== option)
+        : [...prev.accessibility, option]
     }));
   };
 
@@ -95,8 +149,16 @@ const ProfileMain = () => {
     return (
       <div className="p-4">
         <h2>Profile</h2>
-        <div className="alert alert-info">
-          Please <a href="/p55/profile/login">log in</a> to view your profile.
+        <div className="alert alert-info mb-4">
+          Please sign in to view your profile and manage your travel preferences.
+        </div>
+        <div className="d-flex gap-2">
+          <a href="/p55/profile/login" className="btn btn-primary">
+            Log In
+          </a>
+          <a href="/p55/profile/signup" className="btn btn-outline-primary">
+            Sign Up
+          </a>
         </div>
       </div>
     );
@@ -128,12 +190,19 @@ const ProfileMain = () => {
           <button
             className="btn btn-sm btn-outline-primary"
             onClick={() => setIsEditing(!isEditing)}
+            disabled={isLoadingPreferences}
           >
             {isEditing ? 'Cancel' : 'Edit'}
           </button>
         </div>
 
-        {isEditing ? (
+        {isLoadingPreferences ? (
+          <div className="d-flex justify-content-center align-items-center py-5">
+            <div className="spinner-border" role="status">
+              <span className="visually-hidden">Loading preferences...</span>
+            </div>
+          </div>
+        ) : isEditing ? (
           <>
             {/* Budget */}
             <div className="mb-3">
@@ -144,9 +213,9 @@ const ProfileMain = () => {
                 value={preferences.budget}
                 onChange={(e) => handlePreferenceChange('budget', e.target.value)}
               >
-                <option value="budget">Budget</option>
-                <option value="moderate">Moderate</option>
-                <option value="luxury">Luxury</option>
+                <option value="Budget">Budget</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Luxury">Luxury</option>
               </select>
             </div>
 
@@ -159,10 +228,10 @@ const ProfileMain = () => {
                 value={preferences.travelStyle}
                 onChange={(e) => handlePreferenceChange('travelStyle', e.target.value)}
               >
-                <option value="adventure">Adventure</option>
-                <option value="relaxation">Relaxation</option>
-                <option value="cultural">Cultural</option>
-                <option value="balanced">Balanced</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Relaxation">Relaxation</option>
+                <option value="Cultural">Cultural</option>
+                <option value="Balanced">Balanced</option>
               </select>
             </div>
 
@@ -175,9 +244,9 @@ const ProfileMain = () => {
                 value={preferences.pace}
                 onChange={(e) => handlePreferenceChange('pace', e.target.value)}
               >
-                <option value="slow">Slow (stay longer in fewer places)</option>
-                <option value="moderate">Moderate (balanced)</option>
-                <option value="fast">Fast (see many places)</option>
+                <option value="Slow">Slow (stay longer in fewer places)</option>
+                <option value="Moderate">Moderate (balanced)</option>
+                <option value="Fast">Fast (see many places)</option>
               </select>
             </div>
 
@@ -220,18 +289,23 @@ const ProfileMain = () => {
 
             {/* Accessibility */}
             <div className="mb-3">
-              <label htmlFor="accessibility" className="form-label"><strong>Accessibility Needs:</strong></label>
-              <select
-                id="accessibility"
-                className="form-select"
-                value={preferences.accessibility}
-                onChange={(e) => handlePreferenceChange('accessibility', e.target.value)}
-              >
-                <option value="none">None</option>
-                <option value="mobility">Mobility assistance</option>
-                <option value="hearing">Hearing assistance</option>
-                <option value="visual">Visual assistance</option>
-              </select>
+              <label className="form-label"><strong>Accessibility Needs:</strong></label>
+              <div className="d-flex flex-wrap gap-2">
+                {accessibilityOptions.map(option => (
+                  <button
+                    key={option}
+                    type="button"
+                    className={`btn btn-sm ${
+                      preferences.accessibility.includes(option)
+                        ? 'btn-primary'
+                        : 'btn-outline-primary'
+                    }`}
+                    onClick={() => handleAccessibilityToggle(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button
@@ -252,7 +326,9 @@ const ProfileMain = () => {
               </div>
               <div className="col-md-6">
                 <p><strong>Duration:</strong> {preferences.duration} days</p>
-                <p><strong>Accessibility:</strong> {preferences.accessibility || 'None'}</p>
+                {preferences.accessibility.length > 0 && (
+                  <p><strong>Accessibility:</strong> {preferences.accessibility.join(', ')}</p>
+                )}
               </div>
             </div>
             {preferences.interests.length > 0 && (

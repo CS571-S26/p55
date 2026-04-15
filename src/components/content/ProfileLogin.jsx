@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileLogin = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,6 +25,7 @@ const ProfileLogin = () => {
       });
 
       const data = await response.json();
+      console.log('Response received:', data); // Log the full response to debug
 
       if (!response.ok) {
         setError(data.error || 'Login failed');
@@ -40,9 +43,9 @@ const ProfileLogin = () => {
       setPassword('');
       setSuccess('Logged in successfully!');
 
-      // Redirect after a short delay
+      // Redirect after a short delay using React Router
       setTimeout(() => {
-        window.location.href = '/p55/';
+        navigate('/profile');
       }, 1000);
     } catch (err) {
       setError('Network error: ' + err.message);
@@ -89,6 +92,16 @@ const ProfileLogin = () => {
           {loading ? 'Logging In...' : 'Log In'}
         </button>
       </form>
+      <div className="mt-3 text-center">
+        <p className="mb-0">Don't have an account?</p>
+        <button
+          type="button"
+          className="btn btn-link"
+          onClick={() => navigate('/profile/signup')}
+        >
+          Sign Up
+        </button>
+      </div>
     </div>
   );
 };

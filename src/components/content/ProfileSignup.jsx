@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileSignup = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,6 +14,13 @@ const ProfileSignup = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -41,6 +51,7 @@ const ProfileSignup = () => {
 
       setEmail('');
       setPassword('');
+      setConfirmPassword('');
       setSuccess('Check your email to confirm your account before logging in!');
     } catch (err) {
       setError('Network error: ' + err.message);
@@ -79,6 +90,18 @@ const ProfileSignup = () => {
             disabled={loading}
           />
         </div>
+        <div className="mb-3">
+          <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+          <input
+            type="password"
+            className="form-control"
+            id="confirmPassword"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
         <button
           type="submit"
           className="btn btn-success"
@@ -87,6 +110,16 @@ const ProfileSignup = () => {
           {loading ? 'Signing Up...' : 'Sign Up'}
         </button>
       </form>
+      <div className="mt-3 text-center">
+        <p className="mb-0">Already have an account?</p>
+        <button
+          type="button"
+          className="btn btn-link"
+          onClick={() => navigate('/profile/login')}
+        >
+          Log In
+        </button>
+      </div>
     </div>
   );
 };

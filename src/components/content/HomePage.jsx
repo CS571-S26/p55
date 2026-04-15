@@ -7,10 +7,21 @@ import '../../css/HomePage.css';
 import destinationsData from '../../assets/Worldwide_Travel_Cities.json';
 
 const HomePage = () => {
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   const [destinations, setDestinations] = useState([]);
   const [showSwiper, setShowSwiper] = useState(false);
+
+  useEffect(() => {
+    // Check if user is signed in
+    const user = localStorage.getItem('user');
+    const authToken = localStorage.getItem('authToken');
+    
+    // Show modal only if user is NOT signed in
+    if (!user || !authToken) {
+      setShowModal(true);
+    }
+  }, []);
 
   const handleClose = () => setShowModal(false);
   const handleSignUp = () => {

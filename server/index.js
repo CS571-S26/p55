@@ -53,7 +53,7 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
-    const { data, error } = await supabase.auth.signUpWithPassword({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password
     });
@@ -123,7 +123,7 @@ app.post('/api/user/preferences', async (req, res) => {
             pace,
             duration,
             interests: interests || [],
-            accessibility: accessibility || 'none'
+            accessibility: accessibility || []
           }
         }
       },
@@ -135,6 +135,38 @@ app.post('/api/user/preferences', async (req, res) => {
     }
 
     res.json({ success: true, message: 'Preferences saved successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/user/preferences', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verify JWT token with Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Retrieve preferences from user metadata
+    const preferences = user.user_metadata?.preferences || {
+      budget: 'Moderate',
+      travelStyle: 'Balanced',
+      pace: 'Moderate',
+      duration: '7-10',
+      interests: [],
+      accessibility: []
+    };
+
+    res.json(preferences);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
