@@ -52,6 +52,11 @@ const ProfileMain = () => {
             }
           });
 
+          if (response.status === 401) {
+            handleUnauthorized();
+            return;
+          }
+
           if (response.ok) {
             const data = await response.json();
             setPreferences(data);
@@ -123,6 +128,11 @@ const ProfileMain = () => {
           body: JSON.stringify(preferences)
         });
 
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+
         const data = await response.json();
         if (!response.ok) {
           throw new Error(data.error || 'Failed to save preferences');
@@ -143,6 +153,12 @@ const ProfileMain = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     window.location.href = '/p55/profile/login';
+  };
+
+  const handleUnauthorized = () => {
+    // Auto-logout on 401 Unauthorized
+    setMessage('Your session has expired. Please log in again.');
+    handleLogout();
   };
 
   if (!user) {
@@ -311,7 +327,7 @@ const ProfileMain = () => {
             <button
               className="btn btn-success"
               onClick={handleSavePreferences}
-              disabled={loading}
+              disabled={loading || !user}
             >
               {loading ? 'Saving...' : 'Save Preferences'}
             </button>

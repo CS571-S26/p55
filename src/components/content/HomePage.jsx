@@ -11,6 +11,8 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [destinations, setDestinations] = useState([]);
   const [showSwiper, setShowSwiper] = useState(false);
+  const [destinationIndex, setDestinationIndex] = useState(0);
+  const BATCH_SIZE = 12;
 
   useEffect(() => {
     // Check if user is signed in
@@ -23,6 +25,42 @@ const HomePage = () => {
     }
   }, []);
 
+  const loadDestinations = (startIndex) => {
+    const mapped = destinationsData.slice(startIndex, startIndex + BATCH_SIZE).map((d) => ({
+      city: d.city,
+      country: d.country,
+      description: d.short_description,
+      image: getCityImage(d.city),
+      bestTime: undefined, // Could be derived from avg_temp_monthly
+      cost: d.budget_level,
+      attractions: undefined, // Placeholder
+    }));
+    return mapped;
+  };
+
+  // Load destinations from JSON file
+  useEffect(() => {
+    const initialDestinations = loadDestinations(0);
+    setDestinations(initialDestinations);
+  }, []);
+
+  const handleGetStarted = () => {
+    setShowSwiper(true);
+    setShowModal(false);
+    setDestinationIndex(0);
+    const initialDestinations = loadDestinations(0);
+    setDestinations(initialDestinations);
+  };
+
+  const handleLoadMore = () => {
+    const nextIndex = destinationIndex + BATCH_SIZE;
+    if (nextIndex < destinationsData.length) {
+      const newDestinations = loadDestinations(nextIndex);
+      setDestinations(prev => [...prev, ...newDestinations]);
+      setDestinationIndex(nextIndex);
+    }
+  };
+
   const handleClose = () => setShowModal(false);
   const handleSignUp = () => {
     setShowModal(false);
@@ -33,32 +71,40 @@ const HomePage = () => {
     navigate('/profile/login');
   };
 
-  // Load destinations from JSON file
-  useEffect(() => {
-    // Map to CardSwiper format
-    const mapped = destinationsData.slice(0, 12).map((d) => ({
-      city: d.city,
-      country: d.country,
-      description: d.short_description,
-      image: getCityImage(d.city),
-      bestTime: undefined, // Could be derived from avg_temp_monthly
-      cost: d.budget_level,
-      attractions: undefined, // Placeholder
-    }));
-    setDestinations(mapped);
-  }, []);
+  const handleSwipeRight = async (destination) => {
+    const authToken = localStorage.getItem('authToken');
+    
+    if (authToken) {
+      // Save to backend if logged in
+      try {
+        const response = await fetch('http://localhost:5001/api/user/trips', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(destination)
+        });
 
-  const handleGetStarted = () => {
-    setShowSwiper(true);
-    setShowModal(false);
-  };
-
-  const handleSwipeRight = (destination) => {
-    // Save to trips (implement as needed)
-    // e.g., add to localStorage or context
+        if (!response.ok) {
+          const data = await response.json();
+          console.error('Failed to save trip:', data.error);
+        }
+      } catch (err) {
+        console.error('Error saving trip:', err);
+      }
+    } else {
+      // Fallback to localStorage if not logged in
+      const savedTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+      const tripExists = savedTrips.some(trip => trip.city === destination.city && trip.country === destination.country);
+      if (!tripExists) {
+        savedTrips.push(destination);
+        localStorage.setItem('savedTrips', JSON.stringify(savedTrips));
+      }
+    }
   };
   const handleSwipeLeft = (destination) => {
-    // Discard action (optional)
+    // Discard action - no storage needed
   };
 
   return (
@@ -84,6 +130,7 @@ const HomePage = () => {
                   destinations={destinations}
                   onSwipeRight={handleSwipeRight}
                   onSwipeLeft={handleSwipeLeft}
+                  onReachedEnd={handleLoadMore}
                 />
               </Col>
             </Row>
