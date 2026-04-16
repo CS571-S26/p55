@@ -172,6 +172,130 @@ app.get('/api/user/preferences', async (req, res) => {
   }
 });
 
+app.post('/api/user/trips', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verify JWT token with Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    const tripData = req.body;
+
+    if (!tripData.city || !tripData.country) {
+      return res.status(400).json({ error: 'City and country are required' });
+    }
+
+    // Get existing trips from user metadata
+    const existingTrips = user.user_metadata?.savedTrips || [];
+    
+    // Check if trip already exists
+    const tripExists = existingTrips.some(trip => trip.city === tripData.city && trip.country === tripData.country);
+    
+    if (tripExists) {
+      return res.status(400).json({ error: 'Trip already saved' });
+    }
+
+    // Add new trip
+    const updatedTrips = [...existingTrips, tripData];
+
+    // Save to Supabase user_metadata
+    const { error: updateError } = await supabase.auth.updateUser(
+      {
+        data: {
+          savedTrips: updatedTrips
+        }
+      },
+      { token }
+    );
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({ success: true, message: 'Trip saved successfully', trip: tripData });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/user/trips', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verify JWT token with Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Retrieve saved trips from user metadata
+    const savedTrips = user.user_metadata?.savedTrips || [];
+
+    res.json(savedTrips);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/user/trips/:city/:country', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verify JWT token with Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    const { city, country } = req.params;
+
+    // Get existing trips from user metadata
+    const existingTrips = user.user_metadata?.savedTrips || [];
+    
+    // Filter out the trip to delete
+    const updatedTrips = existingTrips.filter(trip => !(trip.city === city && trip.country === country));
+
+    // Save to Supabase user_metadata
+    const { error: updateError } = await supabase.auth.updateUser(
+      {
+        data: {
+          savedTrips: updatedTrips
+        }
+      },
+      { token }
+    );
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({ success: true, message: 'Trip removed successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
