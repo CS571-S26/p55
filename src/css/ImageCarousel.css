@@ -1,0 +1,30 @@
+/* Enhanced carousel controls visibility */
+.custom-carousel .carousel-control-prev,
+.custom-carousel .carousel-control-next {
+  width: 50px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Make the prev/next buttons larger and more visible */
+.custom-carousel .carousel-control-prev:hover,
+.custom-carousel .carousel-control-next:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Style the prev/next icons */
+.custom-carousel .carousel-control-prev-icon,
+.custom-carousel .carousel-control-next-icon {
+  width: 30px;
+  height: 30px;
+  filter: brightness(1.2);
+}
+
+/* Make the icons more prominent */
+.custom-carousel .carousel-control-prev-icon::after,
+.custom-carousel .carousel-control-next-icon::after {
+  content: '';
+  display: inline-block;
+}

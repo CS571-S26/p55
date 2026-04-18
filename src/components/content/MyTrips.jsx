@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner } from 'react-bootstrap';
+import ImageCarousel from './ImageCarousel';
 
 const MyTrips = () => {
   const [savedTrips, setSavedTrips] = useState([]);
@@ -32,8 +33,32 @@ const MyTrips = () => {
       });
 
       if (response.ok) {
-        const trips = await response.json();
+        let trips = await response.json();
+        // Fetch images for each trip
+        trips = await Promise.all(
+          trips.map(async (trip) => {
+            let images = [];
+            try {
+              const res = await fetch('http://localhost:5001/api/image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ city: trip.city, country: trip.country })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.images && data.images.length > 0) {
+                  images = data.images;
+                }
+              }
+            } catch (e) {
+              console.warn(`Failed to fetch images for ${trip.city}:`, e);
+            }
+            return { ...trip, images };
+          })
+        );
         setSavedTrips(trips);
+      } else if (response.status === 401) {
+        setError('Please log in to view your saved trips.');
       } else {
         setError('Failed to fetch trips');
       }
@@ -156,9 +181,11 @@ const MyTrips = () => {
               {savedTrips.map((trip, index) => (
                 <Col md={6} lg={4} key={index} className="mb-4">
                   <Card className="h-100 shadow">
-                    {trip.image && (
+                    {trip.images && trip.images.length > 0 ? (
+                      <ImageCarousel images={trip.images} />
+                    ) : trip.image ? (
                       <Card.Img variant="top" src={trip.image} alt={trip.city} style={{ height: '200px', objectFit: 'cover' }} />
-                    )}
+                    ) : null}
                     <Card.Body>
                       <Card.Title>{trip.city}, {trip.country}</Card.Title>
                       <Card.Text>{trip.description}</Card.Text>

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Modal } from 'react-bootstrap';
 import CardSwiper from './CardSwiper';
-import { getCityImage } from './cityImages';
 import '../../css/HomePage.css';
 import destinationsData from '../../assets/Worldwide_Travel_Cities.json';
 
@@ -25,37 +24,69 @@ const HomePage = () => {
     }
   }, []);
 
-  const loadDestinations = (startIndex) => {
-    const mapped = destinationsData.slice(startIndex, startIndex + BATCH_SIZE).map((d) => ({
-      city: d.city,
-      country: d.country,
-      description: d.short_description,
-      image: getCityImage(d.city),
-      bestTime: undefined, // Could be derived from avg_temp_monthly
-      cost: d.budget_level,
-      attractions: undefined, // Placeholder
-    }));
-    return mapped;
+  const loadDestinations = async (startIndex) => {
+    const destinationsToMap = destinationsData.slice(startIndex, startIndex + BATCH_SIZE);
+    
+    // Fetch images from backend for all destinations in parallel
+    const mappedWithImages = await Promise.all(
+      destinationsToMap.map(async (d) => {
+        let images = [];
+        
+        try {
+          const res = await fetch('http://localhost:5001/api/image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city: d.city, country: d.country })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.images && data.images.length > 0) {
+              images = data.images;
+            }
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch images for ${d.city}:`, e);
+        }
+        
+        return {
+          city: d.city,
+          country: d.country,
+          description: d.short_description,
+          images: images,
+          bestTime: undefined,
+          cost: d.budget_level,
+          attractions: undefined,
+        };
+      })
+    );
+    
+    return mappedWithImages;
   };
 
   // Load destinations from JSON file
   useEffect(() => {
-    const initialDestinations = loadDestinations(0);
-    setDestinations(initialDestinations);
+    const fetchInitialDestinations = async () => {
+      // Generate random starting index for variety
+      const maxStartIndex = Math.max(0, destinationsData.length - BATCH_SIZE);
+      const randomStartIndex = Math.floor(Math.random() * (maxStartIndex + 1));
+      
+      const initialDestinations = await loadDestinations(randomStartIndex);
+      setDestinations(initialDestinations);
+    };
+    fetchInitialDestinations();
   }, []);
 
   const handleGetStarted = () => {
     setShowSwiper(true);
     setShowModal(false);
     setDestinationIndex(0);
-    const initialDestinations = loadDestinations(0);
-    setDestinations(initialDestinations);
+    // Destinations are already loaded and randomized from the initial load
   };
 
-  const handleLoadMore = () => {
+  const handleLoadMore = async () => {
     const nextIndex = destinationIndex + BATCH_SIZE;
     if (nextIndex < destinationsData.length) {
-      const newDestinations = loadDestinations(nextIndex);
+      const newDestinations = await loadDestinations(nextIndex);
       setDestinations(prev => [...prev, ...newDestinations]);
       setDestinationIndex(nextIndex);
     }

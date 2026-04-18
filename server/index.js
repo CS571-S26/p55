@@ -15,6 +15,55 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
+app.post('/api/image', async (req, res) => {
+  const { city, country } = req.body;
+  if (!city || !country) {
+    return res.status(400).json({ error: 'City and country are required' });
+  }
+
+  const pixabayApiKey = process.env.PIXABAY_API_KEY;
+  if (!pixabayApiKey) {
+    return res.status(500).json({ error: 'Pixabay API key not configured' });
+  }
+
+  // Use a more specific search query to get travel-focused images of landmarks/sights
+  const searchQuery = `${city}, ${country}`;
+  const endpoint = `https://pixabay.com/api/?key=${pixabayApiKey}&q=${encodeURIComponent(searchQuery)}&image_type=photo&orientation=horizontal&per_page=5&order=popular&category=travel`;
+
+  try {
+    const response = await fetch(endpoint, { 
+      method: 'GET',
+      headers: {
+        'User-Agent': 'TripGenie/1.0'
+      }
+    });
+    
+    const text = await response.text();
+    let data;
+    
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error(`Pixabay API returned invalid JSON for city "${city}", country "${country}":`, text.substring(0, 200));
+      throw new Error(`Invalid JSON response from Pixabay: ${text.substring(0, 100)}`);
+    }
+    
+    if (!response.ok) {
+      console.error(`Pixabay API error for city "${city}", country "${country}":`, data);
+      throw new Error(data.error || `${response.status} ${response.statusText}`);
+    }
+    
+    if (data.hits && data.hits.length > 0) {
+      const images = data.hits.map(hit => hit.webformatURL);
+      return res.json({ images: images });
+    }
+    res.json({ images: [] });
+  } catch (e) {
+    console.error(`Failed to fetch image for "${city}, ${country}":`, e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/gemini', async (req, res) => {
   const { userInput, destinationsData } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;

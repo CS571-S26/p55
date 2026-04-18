@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button } from 'react-bootstrap';
 import PropTypes from 'prop-types';
+import ImageCarousel from './ImageCarousel';
 
 // Simple swipeable card stack for travel destinations
 const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRight, onSwipeLeft, onReachedEnd }) => {
@@ -41,9 +42,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
   return (
     <div className="d-flex flex-column align-items-center">
       <Card style={{ width: '22rem', minHeight: '32rem' }} className="mb-3 shadow">
-        {dest.image && (
-          <Card.Img variant="top" src={dest.image} alt={dest.city} style={{ height: '200px', objectFit: 'cover' }} />
-        )}
+        <ImageCarousel images={dest.images} />
         <Card.Body>
           <Card.Title>{dest.city}, {dest.country}</Card.Title>
           <Card.Text>{dest.description}</Card.Text>

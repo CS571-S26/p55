@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Form, Spinner } from 'react-bootstrap';
 import CardSwiper from './CardSwiper';
-import { getCityImage } from './cityImages';
 import destinationsData from '../../assets/Worldwide_Travel_Cities.json';
 
 const Explore = () => {
@@ -68,16 +67,36 @@ const Explore = () => {
     setLoading(true);
     try {
       const aiResults = await getGeminiRecommendations(userInput, 0);
-      // Map to CardSwiper format
-      const mapped = aiResults.map((d) => ({
-        city: d.city,
-        country: d.country,
-        description: d.description || d.short_description,
-        image: getCityImage(d.city),
-        bestTime: undefined,
-        cost: d.budget_level || d.cost,
-        attractions: d.attractions,
-      }));
+      // Map to CardSwiper format and fetch images
+      const mapped = await Promise.all(
+        aiResults.map(async (d) => {
+          let images = [];
+          try {
+            const res = await fetch('http://localhost:5001/api/image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ city: d.city, country: d.country })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.images && data.images.length > 0) {
+                images = data.images;
+              }
+            }
+          } catch (e) {
+            console.warn(`Failed to fetch images for ${d.city}:`, e);
+          }
+          return {
+            city: d.city,
+            country: d.country,
+            description: d.description || d.short_description,
+            images: images,
+            bestTime: undefined,
+            cost: d.budget_level || d.cost,
+            attractions: d.attractions,
+          };
+        })
+      );
       setRecommendations(mapped);
       setDestinationBatchIndex(1);
       setCurrentRecommendationIndex(0);
@@ -101,16 +120,36 @@ const Explore = () => {
     setLoading(true);
     try {
       const aiResults = await getGeminiRecommendations(input, startIndex);
-      // Map to CardSwiper format
-      const mapped = aiResults.map((d) => ({
-        city: d.city,
-        country: d.country,
-        description: d.description || d.short_description,
-        image: getCityImage(d.city),
-        bestTime: undefined,
-        cost: d.budget_level || d.cost,
-        attractions: d.attractions,
-      }));
+      // Map to CardSwiper format and fetch images
+      const mapped = await Promise.all(
+        aiResults.map(async (d) => {
+          let images = [];
+          try {
+            const res = await fetch('http://localhost:5001/api/image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ city: d.city, country: d.country })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.images && data.images.length > 0) {
+                images = data.images;
+              }
+            }
+          } catch (e) {
+            console.warn(`Failed to fetch images for ${d.city}:`, e);
+          }
+          return {
+            city: d.city,
+            country: d.country,
+            description: d.description || d.short_description,
+            images: images,
+            bestTime: undefined,
+            cost: d.budget_level || d.cost,
+            attractions: d.attractions,
+          };
+        })
+      );
       
       // Append new recommendations to existing ones
       setRecommendations(prev => [...prev, ...mapped]);
