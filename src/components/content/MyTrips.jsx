@@ -188,11 +188,13 @@ const MyTrips = () => {
                     ) : null}
                     <Card.Body>
                       <Card.Title>{trip.city}, {trip.country}</Card.Title>
+                      {trip.region && <p style={{ fontSize: '0.85rem', color: '#666' }}>{trip.region.charAt(0).toUpperCase() + trip.region.slice(1).replace('_', ' ')}</p>}
                       <Card.Text>{trip.description}</Card.Text>
-                      <ul className="text-start small mb-3">
-                        {trip.bestTime && <li><b>Best Time:</b> {trip.bestTime}</li>}
-                        {trip.cost && <li><b>Budget:</b> {trip.cost}</li>}
-                        {trip.attractions && <li><b>Attractions:</b> {trip.attractions}</li>}
+                      <ul className="text-start small mb-3" style={{ lineHeight: '1.6' }}>
+                        {(trip.budget || trip.cost) && <li><b>Budget Level:</b> {trip.budget || trip.cost}</li>}
+                        {trip.bestFor && <li><b>Best For:</b> {trip.bestFor}</li>}
+                        {trip.idealDuration && <li><b>Ideal Duration:</b> {trip.idealDuration}</li>}
+                        {trip.attractions && <li><b>Top Attractions:</b> {trip.attractions}</li>}
                       </ul>
                     </Card.Body>
                     <Card.Footer className="bg-white border-top">

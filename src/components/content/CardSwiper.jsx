@@ -45,13 +45,13 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
         <ImageCarousel images={dest.images} />
         <Card.Body>
           <Card.Title>{dest.city}, {dest.country}</Card.Title>
+          {dest.region && <p style={{ fontSize: '0.85rem', color: '#666' }}>{dest.region.charAt(0).toUpperCase() + dest.region.slice(1).replace('_', ' ')}</p>}
           <Card.Text>{dest.description}</Card.Text>
-          {/* Add more info fields as needed */}
-          <ul className="text-start">
-            {dest.bestTime && <li><b>Best Time:</b> {dest.bestTime}</li>}
-            {dest.cost && <li><b>Cost:</b> {dest.cost}</li>}
+          <ul className="text-start" style={{ fontSize: '0.95rem', lineHeight: '1.8' }}>
+            {dest.budget && <li><b>Budget Level:</b> {dest.budget}</li>}
+            {dest.bestFor && <li><b>Best For:</b> {dest.bestFor}</li>}
+            {dest.idealDuration && <li><b>Ideal Duration:</b> {dest.idealDuration}</li>}
             {dest.attractions && <li><b>Top Attractions:</b> {dest.attractions}</li>}
-            {/* Add more fields as needed */}
           </ul>
         </Card.Body>
       </Card>

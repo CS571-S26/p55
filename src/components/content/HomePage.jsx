@@ -48,13 +48,41 @@ const HomePage = () => {
           console.warn(`Failed to fetch images for ${d.city}:`, e);
         }
         
+        // Extract best activities based on highest ratings
+        const ratings = {
+          culture: d.culture || 0,
+          adventure: d.adventure || 0,
+          nature: d.nature || 0,
+          beaches: d.beaches || 0,
+          nightlife: d.nightlife || 0,
+          cuisine: d.cuisine || 0,
+          wellness: d.wellness || 0,
+          urban: d.urban || 0,
+        };
+        const bestFor = Object.entries(ratings)
+          .filter(([_, rating]) => rating >= 4)
+          .map(([activity]) => activity.charAt(0).toUpperCase() + activity.slice(1))
+          .join(', ') || 'Exploration';
+        
+        // Parse ideal durations if it's a string
+        let durations = d.ideal_durations;
+        if (typeof durations === 'string') {
+          try {
+            durations = JSON.parse(durations);
+          } catch {
+            durations = [];
+          }
+        }
+        
         return {
           city: d.city,
           country: d.country,
+          region: d.region,
           description: d.short_description,
           images: images,
-          bestTime: undefined,
-          cost: d.budget_level,
+          budget: d.budget_level,
+          bestFor: bestFor,
+          idealDuration: durations && durations.length > 0 ? durations[0] : 'Flexible',
           attractions: undefined,
         };
       })
