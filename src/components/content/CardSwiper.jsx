@@ -60,9 +60,9 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
       Ideal duration: ${dest.idealDuration || 'Flexible'}.
       Budget level: ${dest.budget || 'Not specified'}.
 
-      Please provide a day-by-day itinerary with specific activities, attractions to visit, and recommendations. 
-      Return ONLY a valid JSON array with objects containing: day (string like "Day 1"), title (string), location (string - specific attraction or landmark name), activities (array of strings).
-      Example: [{"day":"Day 1","title":"Arrival & Exploration","location":"Eiffel Tower","activities":["Arrive at airport","Check into hotel","Evening stroll near Eiffel Tower"]}]`;
+      Please provide a list of recommended activities, attractions, and things to do. 
+      Return ONLY a valid JSON array with objects containing: title (string - activity name), location (string - specific attraction or landmark name), activities (array of strings with specific recommendations).
+      Example: [{"title":"Explore the Eiffel Tower","location":"Eiffel Tower","activities":["Take the elevator to the top","Enjoy panoramic city views","Visit the gift shop"]},{"title":"Visit the Louvre Museum","location":"Louvre Museum","activities":["See the Mona Lisa","Browse classical sculptures","Explore Egyptian artifacts"]}]`;
 
       const res = await fetch('http://localhost:5001/api/gemini', {
         method: 'POST',
@@ -89,6 +89,17 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
   };
 
   const parseAndEnhanceItinerary = async (text) => {
+    const stripMarkdown = (str) => {
+      if (!str) return '';
+      return str
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
+        .replace(/__(.*?)__/g, '$1') // Remove __bold__
+        .replace(/\*(.*?)\*/g, '$1') // Remove *italic*
+        .replace(/_(.*?)_/g, '$1') // Remove _italic_
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove [link](url)
+        .replace(/^[-*] /gm, ''); // Remove list markers at start of lines
+    };
+
     try {
       // Parse JSON response directly
       let items = [];
@@ -104,33 +115,16 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
         }
       }
 
-      // Fetch images for each specific location/attraction
+      // Enhance items without day structure
       const enhancedItems = await Promise.all(
         items.map(async (item, index) => {
-          let image = null;
-          const searchLocation = item.location || dest.city; // Fallback to city if no location specified
-          
-          try {
-            const res = await fetch('http://localhost:5001/api/image', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ city: searchLocation, country: dest.country })
-            });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.images && data.images.length > 0) {
-                image = data.images[0]; // Use first image for this attraction
-              }
-            }
-          } catch (e) {
-            console.warn(`Failed to fetch image for ${searchLocation}:`, e);
-          }
-
+          const cleanedActivities = (item.activities || []).map(activity => stripMarkdown(activity));
           return {
             id: index,
-            title: `${item.day}: ${item.title}`,
-            description: item.activities ? item.activities.join(' • ') : '',
-            image: image,
+            title: stripMarkdown(item.title),
+            description: cleanedActivities.join(' • '),
+            activities: cleanedActivities,
+            image: null,
             selected: true
           };
         })
@@ -192,9 +186,12 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
           const data = await response.json();
           console.error('Failed to save itinerary:', data.error);
           alert('Failed to save itinerary. Please try again.');
+          setSavingItinerary(false);
         } else {
-          alert('Itinerary saved successfully!');
           setShowItineraryModal(false);
+          setSavingItinerary(false);
+          // Move to next location like clicking the Save button
+          handleSwipe('right');
         }
       } else {
         // Fallback to localStorage if not logged in
@@ -206,14 +203,16 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
           savedTrips.push(enhancedDestination);
         }
         localStorage.setItem('savedTrips', JSON.stringify(savedTrips));
-        alert('Itinerary saved successfully!');
         setShowItineraryModal(false);
+        setSavingItinerary(false);
+        // Move to next location like clicking the Save button
+        handleSwipe('right');
       }
     } catch (err) {
       console.error('Error saving itinerary:', err);
       alert('Failed to save itinerary. Please try again.');
+      setSavingItinerary(false);
     }
-    setSavingItinerary(false);
   };
 
   return (
@@ -241,11 +240,11 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
       </div>
 
       {/* Itinerary Modal */}
-      <Modal show={showItineraryModal} onHide={handleCloseItineraryModal} centered size="lg">
+      <Modal show={showItineraryModal} onHide={handleCloseItineraryModal} centered size="xl">
         <Modal.Header closeButton>
           <Modal.Title>Create Your Itinerary - {dest.city}{dest.state ? ', ' + dest.state : ''}, {dest.country}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {!itinerary ? (
             <div>
               <Form.Group className="mb-3">
@@ -276,74 +275,74 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
             </div>
           ) : (
             <div>
-              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                {itineraryItems.length > 0 ? (
-                  <div>
-                    <p className="mb-3"><b>Select the activities you'd like to include:</b></p>
-                    <Row className="g-3">
-                      {itineraryItems.map((item) => (
-                        <Col key={item.id} xs={12} md={6} lg={12}>
-                          <Card className="h-100" style={{ border: selectedItems.has(item.id) ? '2px solid #0d6efd' : '1px solid #ddd' }}>
-                            {item.image && (
-                              <Image
-                                src={item.image}
-                                alt={item.title}
-                                style={{ height: '150px', objectFit: 'cover' }}
+              {itineraryItems.length > 0 ? (
+                <div>
+                  <p className="mb-3"><b>Select the activities you'd like to include:</b></p>
+                  <Row className="g-3">
+                    {itineraryItems.map((item) => (
+                      <Col key={item.id} xs={12}>
+                        <Card className="h-100" style={{ border: selectedItems.has(item.id) ? '2px solid #0d6efd' : '1px solid #ddd' }}>
+                          <Card.Body>
+                            <div className="d-flex align-items-start">
+                              <Form.Check
+                                type="checkbox"
+                                checked={selectedItems.has(item.id)}
+                                onChange={() => handleToggleItem(item.id)}
+                                className="me-3 mt-1"
                               />
-                            )}
-                            <Card.Body>
-                              <div className="d-flex align-items-start">
-                                <Form.Check
-                                  type="checkbox"
-                                  checked={selectedItems.has(item.id)}
-                                  onChange={() => handleToggleItem(item.id)}
-                                  className="me-2 mt-1"
-                                />
-                                <div className="flex-grow-1">
-                                  <Card.Title style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>
-                                    {item.title}
-                                  </Card.Title>
-                                  <Card.Text style={{ fontSize: '0.9rem', color: '#666' }}>
-                                    {item.description.substring(0, 150)}
-                                    {item.description.length > 150 ? '...' : ''}
+                              <div className="flex-grow-1">
+                                <Card.Title style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>
+                                  {item.title}
+                                </Card.Title>
+                                {item.activities && item.activities.length > 0 ? (
+                                  <ul style={{ fontSize: '0.95rem', color: '#555', lineHeight: '1.8', marginBottom: 0, paddingLeft: '1.25rem' }}>
+                                    {item.activities.map((activity, idx) => (
+                                      <li key={idx}>{activity}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <Card.Text style={{ fontSize: '0.95rem', color: '#555', lineHeight: '1.6', marginBottom: 0 }}>
+                                    {item.description}
                                   </Card.Text>
-                                </div>
+                                )}
                               </div>
-                            </Card.Body>
-                          </Card>
-                        </Col>
-                      ))}
-                    </Row>
-                  </div>
-                ) : (
-                  <p>No activities to display</p>
-                )}
+                            </div>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                </div>
+              ) : (
+                <p>No activities to display</p>
+              )}
+              <div className="mt-4">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => {
+                    setItinerary('');
+                    setItineraryItems([]);
+                  }}
+                  className="w-100 mb-2"
+                >
+                  Generate Another Itinerary
+                </Button>
+                <Button 
+                  variant="success" 
+                  onClick={handleSaveItinerary}
+                  disabled={savingItinerary || selectedItems.size === 0}
+                  className="w-100"
+                >
+                  {savingItinerary ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    '💾 Save Itinerary'
+                  )}
+                </Button>
               </div>
-              <Button 
-                variant="secondary" 
-                onClick={() => {
-                  setItinerary('');
-                  setItineraryItems([]);
-                }}
-                className="mt-3 w-100"
-              >
-                Generate Another Itinerary
-              </Button>
-              <Button 
-                variant="success" 
-                onClick={handleSaveItinerary}
-                disabled={savingItinerary || selectedItems.size === 0}
-                className="mt-2 w-100"
-              >
-                {savingItinerary ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    Saving...
-                  </>
-                ) : (
-                  '💾 Save Itinerary'
-                )}
-              </Button>
             </div>
           )}
         </Modal.Body>
