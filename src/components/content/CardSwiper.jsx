@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button } from 'react-bootstrap';
+import { Card, Button, Modal, Form, Spinner, Row, Col, Image } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import ImageCarousel from './ImageCarousel';
 
 // Simple swipeable card stack for travel destinations
 const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRight, onSwipeLeft, onReachedEnd }) => {
   const [current, setCurrent] = useState(initialIndex);
+  const [showItineraryModal, setShowItineraryModal] = useState(false);
+  const [itineraryInput, setItineraryInput] = useState('');
+  const [itinerary, setItinerary] = useState('');
+  const [itineraryItems, setItineraryItems] = useState([]);
+  const [loadingItinerary, setLoadingItinerary] = useState(false);
+  const [selectedItems, setSelectedItems] = useState(new Set());
 
   // Notify parent when current index changes
   useEffect(() => {
@@ -20,7 +26,12 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
 
   const handleSwipe = (direction) => {
     if (direction === 'right') {
-      onSwipeRight(destinations[current]);
+      const selectedItinerary = itineraryItems.filter(item => selectedItems.has(item.id));
+      const enhancedDestination = {
+        ...destinations[current],
+        selectedItinerary: selectedItinerary
+      };
+      onSwipeRight(enhancedDestination);
     } else {
       onSwipeLeft(destinations[current]);
     }
@@ -39,12 +50,120 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
 
   const dest = destinations[current];
 
+  const handleGenerateItinerary = async () => {
+    setLoadingItinerary(true);
+    try {
+      const prompt = `Create a detailed itinerary for ${dest.city}, ${dest.country}. 
+      The user's preferences: ${itineraryInput || 'General exploration'}.
+      The destination is best for: ${dest.bestFor || 'General tourism'}.
+      Ideal duration: ${dest.idealDuration || 'Flexible'}.
+      Budget level: ${dest.budget || 'Not specified'}.
+
+      Please provide a day-by-day itinerary with specific activities, attractions to visit, and recommendations. Format it clearly with day numbers and activities.`;
+
+      const res = await fetch('http://localhost:5001/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userInput: prompt,
+          destinationsData: []
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to generate itinerary');
+      
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      setItinerary(text);
+      
+      // Parse itinerary into items and fetch images
+      await parseAndEnhanceItinerary(text);
+    } catch (e) {
+      console.error('Error generating itinerary:', e);
+      setItinerary('Failed to generate itinerary. Please try again.');
+      setItineraryItems([]);
+    }
+    setLoadingItinerary(false);
+  };
+
+  const parseAndEnhanceItinerary = async (text) => {
+    // Split by day or activity
+    const lines = text.split('\n').filter(line => line.trim().length > 0);
+    const items = [];
+    let currentDay = '';
+    
+    for (const line of lines) {
+      if (line.toLowerCase().includes('day') || line.match(/^\d+\./)) {
+        currentDay = line.trim();
+        items.push({
+          id: items.length,
+          title: currentDay,
+          description: '',
+          image: null,
+          selected: true
+        });
+      } else if (items.length > 0 && currentDay) {
+        items[items.length - 1].description += (items[items.length - 1].description ? ' ' : '') + line.trim();
+      }
+    }
+
+    // Fetch images for each item
+    const enhancedItems = await Promise.all(
+      items.map(async (item) => {
+        let image = null;
+        try {
+          // Use the existing image endpoint with destination info
+          const res = await fetch('http://localhost:5001/api/image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city: dest.city, state: dest.state || '', country: dest.country })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.images && data.images.length > 0) {
+              // Cycle through images for variety
+              image = data.images[items.length % data.images.length];
+            }
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch image for ${item.title}:`, e);
+        }
+        return { ...item, image };
+      })
+    );
+
+    setItineraryItems(enhancedItems);
+    setSelectedItems(new Set(enhancedItems.map(item => item.id)));
+  };
+
+  const handleToggleItem = (itemId) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(itemId)) {
+      newSelected.delete(itemId);
+    } else {
+      newSelected.add(itemId);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleOpenItineraryModal = () => {
+    setItineraryInput('');
+    setItinerary('');
+    setShowItineraryModal(true);
+  };
+
+  const handleCloseItineraryModal = () => {
+    setShowItineraryModal(false);
+  };
+
   return (
     <div className="d-flex flex-column align-items-center">
-      <Card style={{ width: '22rem', minHeight: '32rem' }} className="mb-3 shadow">
-        <ImageCarousel images={dest.images} />
+      <Card style={{ width: '22rem', minHeight: '32rem', cursor: 'pointer' }} className="mb-3 shadow" onClick={handleOpenItineraryModal}>
+        <div onClick={(e) => e.stopPropagation()}>
+          <ImageCarousel images={dest.images} />
+        </div>
         <Card.Body>
-          <Card.Title>{dest.city}, {dest.country}</Card.Title>
+          <Card.Title>{dest.city}{dest.state ? ', ' + dest.state : ''}, {dest.country}</Card.Title>
           {dest.region && <p style={{ fontSize: '0.85rem', color: '#666' }}>{dest.region.charAt(0).toUpperCase() + dest.region.slice(1).replace('_', ' ')}</p>}
           <Card.Text>{dest.description}</Card.Text>
           <ul className="text-start" style={{ fontSize: '0.95rem', lineHeight: '1.8' }}>
@@ -53,12 +172,107 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
             {dest.idealDuration && <li><b>Ideal Duration:</b> {dest.idealDuration}</li>}
             {dest.attractions && <li><b>Top Attractions:</b> {dest.attractions}</li>}
           </ul>
+          <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '10px' }}>Click to create an itinerary</p>
         </Card.Body>
       </Card>
       <div>
         <Button variant="danger" className="me-3" onClick={() => handleSwipe('left')}>❌ Discard</Button>
         <Button variant="success" onClick={() => handleSwipe('right')}>❤️ Save</Button>
       </div>
+
+      {/* Itinerary Modal */}
+      <Modal show={showItineraryModal} onHide={handleCloseItineraryModal} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Create Your Itinerary - {dest.city}{dest.state ? ', ' + dest.state : ''}, {dest.country}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {!itinerary ? (
+            <div>
+              <Form.Group className="mb-3">
+                <Form.Label><b>Describe what you would like to do:</b></Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  placeholder="E.g., I have 5 days, love beach activities and local cuisine. I'm traveling with family and prefer a mix of relaxation and exploration on a mid-range budget."
+                  value={itineraryInput}
+                  onChange={(e) => setItineraryInput(e.target.value)}
+                />
+              </Form.Group>
+              <Button 
+                variant="primary" 
+                onClick={handleGenerateItinerary} 
+                disabled={loadingItinerary}
+                className="w-100"
+              >
+                {loadingItinerary ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Generating Itinerary...
+                  </>
+                ) : (
+                  'Generate AI Itinerary'
+                )}
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                {itineraryItems.length > 0 ? (
+                  <div>
+                    <p className="mb-3"><b>Select the activities you'd like to include:</b></p>
+                    <Row className="g-3">
+                      {itineraryItems.map((item) => (
+                        <Col key={item.id} xs={12} md={6} lg={12}>
+                          <Card className="h-100" style={{ border: selectedItems.has(item.id) ? '2px solid #0d6efd' : '1px solid #ddd' }}>
+                            {item.image && (
+                              <Image
+                                src={item.image}
+                                alt={item.title}
+                                style={{ height: '150px', objectFit: 'cover' }}
+                              />
+                            )}
+                            <Card.Body>
+                              <div className="d-flex align-items-start">
+                                <Form.Check
+                                  type="checkbox"
+                                  checked={selectedItems.has(item.id)}
+                                  onChange={() => handleToggleItem(item.id)}
+                                  className="me-2 mt-1"
+                                />
+                                <div className="flex-grow-1">
+                                  <Card.Title style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>
+                                    {item.title}
+                                  </Card.Title>
+                                  <Card.Text style={{ fontSize: '0.9rem', color: '#666' }}>
+                                    {item.description.substring(0, 150)}
+                                    {item.description.length > 150 ? '...' : ''}
+                                  </Card.Text>
+                                </div>
+                              </div>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                ) : (
+                  <p>No activities to display</p>
+                )}
+              </div>
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  setItinerary('');
+                  setItineraryItems([]);
+                }}
+                className="mt-3 w-100"
+              >
+                Generate Another Itinerary
+              </Button>
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

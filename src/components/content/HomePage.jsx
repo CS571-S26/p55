@@ -36,7 +36,7 @@ const HomePage = () => {
           const res = await fetch('http://localhost:5001/api/image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ city: d.city, country: d.country })
+            body: JSON.stringify({ city: d.city, state: d.state || '', country: d.country })
           });
           if (res.ok) {
             const data = await res.json();
@@ -77,6 +77,7 @@ const HomePage = () => {
         return {
           city: d.city,
           country: d.country,
+          state: d.state || '',
           region: d.region,
           description: d.short_description,
           images: images,

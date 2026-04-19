@@ -43,12 +43,13 @@ const Explore = () => {
 
   // Helper to call backend Gemini proxy
   async function getGeminiRecommendations(userInput, startIndex = 0) {
+    const prompt = `Given the following travel destinations data (as JSON array), and the user's preferences, recommend the top 8 cities.\n\nUser preferences: ${userInput}\n\nDestinations data:\n${JSON.stringify(destinationsData.slice(startIndex, startIndex + BATCH_SIZE))}\n\nReturn a JSON array of objects with keys: city, country, description, budget_level.`;
+    
     const res = await fetch('http://localhost:5001/api/gemini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        userInput,
-        destinationsData: destinationsData.slice(startIndex, startIndex + BATCH_SIZE)
+        userInput: prompt
       })
     });
     if (!res.ok) throw new Error('Gemini API error');
@@ -67,15 +68,24 @@ const Explore = () => {
     setLoading(true);
     try {
       const aiResults = await getGeminiRecommendations(userInput, 0);
+      
+      // Enrich aiResults with full destination data (including state field)
+      const enrichedResults = aiResults.map(aiDest => {
+        const fullData = destinationsData.find(
+          d => d.city === aiDest.city && d.country === aiDest.country
+        );
+        return { ...fullData, ...aiDest }; // Merge full data with AI result
+      });
+
       // Map to CardSwiper format and fetch images
       const mapped = await Promise.all(
-        aiResults.map(async (d) => {
+        enrichedResults.map(async (d) => {
           let images = [];
           try {
             const res = await fetch('http://localhost:5001/api/image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ city: d.city, country: d.country })
+              body: JSON.stringify({ city: d.city, state: d.state || '', country: d.country })
             });
             if (res.ok) {
               const data = await res.json();
@@ -116,6 +126,7 @@ const Explore = () => {
           return {
             city: d.city,
             country: d.country,
+            state: d.state || '',
             region: d.region,
             description: d.description || d.short_description,
             images: images,
@@ -148,16 +159,23 @@ const Explore = () => {
 
     setLoading(true);
     try {
-      const aiResults = await getGeminiRecommendations(input, startIndex);
+      const aiResults = await getGeminiRecommendations(input, startIndex);      
+      // Enrich aiResults with full destination data (including state field)
+      const enrichedResults = aiResults.map(aiDest => {
+        const fullData = destinationsData.find(
+          d => d.city === aiDest.city && d.country === aiDest.country
+        );
+        return { ...fullData, ...aiDest }; // Merge full data with AI result
+      });
       // Map to CardSwiper format and fetch images
       const mapped = await Promise.all(
-        aiResults.map(async (d) => {
+        enrichedResults.map(async (d) => {
           let images = [];
           try {
             const res = await fetch('http://localhost:5001/api/image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ city: d.city, country: d.country })
+              body: JSON.stringify({ city: d.city, state: d.state || '', country: d.country })
             });
             if (res.ok) {
               const data = await res.json();
@@ -198,6 +216,7 @@ const Explore = () => {
           return {
             city: d.city,
             country: d.country,
+            state: d.state || '',
             region: d.region,
             description: d.description || d.short_description,
             images: images,
@@ -269,8 +288,9 @@ const Explore = () => {
             <Form onSubmit={handleSubmit} className="mb-4">
               <Form.Group controlId="exploreInput">
                 <Form.Control
-                  type="text"
-                  placeholder="e.g. beach, budget, Europe, adventure, food, family-friendly..."
+                  as="textarea"
+                  rows={4}
+                  placeholder="E.g., I'm looking for a beach destination in Europe, with good food scene and family-friendly activities on a budget."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   required

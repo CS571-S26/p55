@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/api/image', async (req, res) => {
-  const { city, country } = req.body;
+  const { city, country, state } = req.body;
   if (!city || !country) {
     return res.status(400).json({ error: 'City and country are required' });
   }
@@ -26,8 +26,8 @@ app.post('/api/image', async (req, res) => {
     return res.status(500).json({ error: 'Pixabay API key not configured' });
   }
 
-  // Use a more specific search query to get travel-focused images of landmarks/sights
-  const searchQuery = `${city}, ${country}`;
+  // Build search query: use state+city if available, otherwise just city+country
+  const searchQuery = state && state.trim() ? `${city}, ${state}` : `${city}, ${country}`;
   const endpoint = `https://pixabay.com/api/?key=${pixabayApiKey}&q=${encodeURIComponent(searchQuery)}&image_type=photo&orientation=horizontal&per_page=5&order=popular&category=travel`;
 
   try {
@@ -65,18 +65,18 @@ app.post('/api/image', async (req, res) => {
 });
 
 app.post('/api/gemini', async (req, res) => {
-  const { userInput, destinationsData } = req.body;
+  const { userInput } = req.body;
+  if (!userInput) return res.status(400).json({ error: 'userInput is required' });
+  
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not set' });
 
   const endpoint =
     'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=' + apiKey;
 
-  const prompt = `Given the following travel destinations data (as JSON array), and the user's preferences, recommend the top 8 cities.\n\nUser preferences: ${userInput}\n\nDestinations data:\n${JSON.stringify(destinationsData)}\n\nReturn a JSON array of objects with keys: city, country, description, budget_level.`;
-
   const body = {
     contents: [
-      { parts: [{ text: prompt }] }
+      { parts: [{ text: userInput }] }
     ]
   };
 
