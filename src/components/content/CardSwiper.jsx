@@ -12,6 +12,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
   const [itineraryItems, setItineraryItems] = useState([]);
   const [loadingItinerary, setLoadingItinerary] = useState(false);
   const [selectedItems, setSelectedItems] = useState(new Set());
+  const [savingItinerary, setSavingItinerary] = useState(false);
 
   // Notify parent when current index changes
   useEffect(() => {
@@ -59,7 +60,9 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
       Ideal duration: ${dest.idealDuration || 'Flexible'}.
       Budget level: ${dest.budget || 'Not specified'}.
 
-      Please provide a day-by-day itinerary with specific activities, attractions to visit, and recommendations. Format it clearly with day numbers and activities.`;
+      Please provide a day-by-day itinerary with specific activities, attractions to visit, and recommendations. 
+      Return ONLY a valid JSON array with objects containing: day (string like "Day 1"), title (string), location (string - specific attraction or landmark name), activities (array of strings).
+      Example: [{"day":"Day 1","title":"Arrival & Exploration","location":"Eiffel Tower","activities":["Arrive at airport","Check into hotel","Evening stroll near Eiffel Tower"]}]`;
 
       const res = await fetch('http://localhost:5001/api/gemini', {
         method: 'POST',
@@ -74,7 +77,6 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
       
       const data = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      setItinerary(text);
       
       // Parse itinerary into items and fetch images
       await parseAndEnhanceItinerary(text);
@@ -87,53 +89,61 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
   };
 
   const parseAndEnhanceItinerary = async (text) => {
-    // Split by day or activity
-    const lines = text.split('\n').filter(line => line.trim().length > 0);
-    const items = [];
-    let currentDay = '';
-    
-    for (const line of lines) {
-      if (line.toLowerCase().includes('day') || line.match(/^\d+\./)) {
-        currentDay = line.trim();
-        items.push({
-          id: items.length,
-          title: currentDay,
-          description: '',
-          image: null,
-          selected: true
-        });
-      } else if (items.length > 0 && currentDay) {
-        items[items.length - 1].description += (items[items.length - 1].description ? ' ' : '') + line.trim();
-      }
-    }
-
-    // Fetch images for each item
-    const enhancedItems = await Promise.all(
-      items.map(async (item) => {
-        let image = null;
-        try {
-          // Use the existing image endpoint with destination info
-          const res = await fetch('http://localhost:5001/api/image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ city: dest.city, state: dest.state || '', country: dest.country })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.images && data.images.length > 0) {
-              // Cycle through images for variety
-              image = data.images[items.length % data.images.length];
-            }
-          }
-        } catch (e) {
-          console.warn(`Failed to fetch image for ${item.title}:`, e);
+    try {
+      // Parse JSON response directly
+      let items = [];
+      try {
+        items = JSON.parse(text);
+      } catch {
+        // Fallback: try to extract JSON from the text
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          items = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('Could not parse itinerary JSON');
         }
-        return { ...item, image };
-      })
-    );
+      }
 
-    setItineraryItems(enhancedItems);
-    setSelectedItems(new Set(enhancedItems.map(item => item.id)));
+      // Fetch images for each specific location/attraction
+      const enhancedItems = await Promise.all(
+        items.map(async (item, index) => {
+          let image = null;
+          const searchLocation = item.location || dest.city; // Fallback to city if no location specified
+          
+          try {
+            const res = await fetch('http://localhost:5001/api/image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ city: searchLocation, country: dest.country })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.images && data.images.length > 0) {
+                image = data.images[0]; // Use first image for this attraction
+              }
+            }
+          } catch (e) {
+            console.warn(`Failed to fetch image for ${searchLocation}:`, e);
+          }
+
+          return {
+            id: index,
+            title: `${item.day}: ${item.title}`,
+            description: item.activities ? item.activities.join(' • ') : '',
+            image: image,
+            selected: true
+          };
+        })
+      );
+
+      setItineraryItems(enhancedItems);
+      setSelectedItems(new Set(enhancedItems.map(item => item.id)));
+      setItinerary('parsed'); // Mark as having valid itinerary
+    } catch (e) {
+      console.error('Error parsing itinerary:', e);
+      setItinerary('');
+      setItineraryItems([]);
+    }
   };
 
   const handleToggleItem = (itemId) => {
@@ -154,6 +164,56 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
 
   const handleCloseItineraryModal = () => {
     setShowItineraryModal(false);
+  };
+
+  const handleSaveItinerary = async () => {
+    setSavingItinerary(true);
+    try {
+      const selectedItinerary = itineraryItems.filter(item => selectedItems.has(item.id));
+      const enhancedDestination = {
+        ...dest,
+        selectedItinerary: selectedItinerary
+      };
+
+      const authToken = localStorage.getItem('authToken');
+      
+      if (authToken) {
+        // Save to backend if logged in
+        const response = await fetch('http://localhost:5001/api/user/trips', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(enhancedDestination)
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          console.error('Failed to save itinerary:', data.error);
+          alert('Failed to save itinerary. Please try again.');
+        } else {
+          alert('Itinerary saved successfully!');
+          setShowItineraryModal(false);
+        }
+      } else {
+        // Fallback to localStorage if not logged in
+        const savedTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+        const tripIndex = savedTrips.findIndex(trip => trip.city === dest.city && trip.country === dest.country);
+        if (tripIndex >= 0) {
+          savedTrips[tripIndex] = enhancedDestination;
+        } else {
+          savedTrips.push(enhancedDestination);
+        }
+        localStorage.setItem('savedTrips', JSON.stringify(savedTrips));
+        alert('Itinerary saved successfully!');
+        setShowItineraryModal(false);
+      }
+    } catch (err) {
+      console.error('Error saving itinerary:', err);
+      alert('Failed to save itinerary. Please try again.');
+    }
+    setSavingItinerary(false);
   };
 
   return (
@@ -268,6 +328,21 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
                 className="mt-3 w-100"
               >
                 Generate Another Itinerary
+              </Button>
+              <Button 
+                variant="success" 
+                onClick={handleSaveItinerary}
+                disabled={savingItinerary || selectedItems.size === 0}
+                className="mt-2 w-100"
+              >
+                {savingItinerary ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Saving...
+                  </>
+                ) : (
+                  '💾 Save Itinerary'
+                )}
               </Button>
             </div>
           )}
