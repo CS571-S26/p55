@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileMain = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [preferences, setPreferences] = useState({
     budget: 'Moderate',
@@ -152,7 +154,7 @@ const ProfileMain = () => {
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
-    window.location.href = '/p55/profile/login';
+    navigate('/profile/login');
   };
 
   const handleUnauthorized = () => {
@@ -169,12 +171,18 @@ const ProfileMain = () => {
           Please sign in to view your profile and manage your travel preferences.
         </div>
         <div className="d-flex gap-2">
-          <a href="/p55/profile/login" className="btn btn-primary">
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate('/profile/login')}
+          >
             Log In
-          </a>
-          <a href="/p55/profile/signup" className="btn btn-outline-primary">
+          </button>
+          <button
+            className="btn btn-outline-primary"
+            onClick={() => navigate('/profile/signup')}
+          >
             Sign Up
-          </a>
+          </button>
         </div>
       </div>
     );
