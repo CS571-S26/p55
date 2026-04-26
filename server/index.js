@@ -86,7 +86,7 @@ app.post('/api/gemini', async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!response.ok) throw new Error('Gemini API error');
+    if (!response.ok) throw new Error('Gemini API error: ' + response.statusText);
     const data = await response.json();
     res.json(data);
   } catch (e) {

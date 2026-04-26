@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Modal, Form, Spinner, Row, Col, Image } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import ImageCarousel from './ImageCarousel';
+import API_BASE_URL from '../../config/api';
 
 // Simple swipeable card stack for travel destinations
 const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRight, onSwipeLeft, onReachedEnd }) => {
@@ -64,7 +65,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
       Return ONLY a valid JSON array with objects containing: title (string - activity name), location (string - specific attraction or landmark name), activities (array of strings with specific recommendations).
       Example: [{"title":"Explore the Eiffel Tower","location":"Eiffel Tower","activities":["Take the elevator to the top","Enjoy panoramic city views","Visit the gift shop"]},{"title":"Visit the Louvre Museum","location":"Louvre Museum","activities":["See the Mona Lisa","Browse classical sculptures","Explore Egyptian artifacts"]}]`;
 
-      const res = await fetch('http://localhost:5001/api/gemini', {
+      const res = await fetch(`${API_BASE_URL}/api/gemini`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -173,7 +174,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
       
       if (authToken) {
         // Save to backend if logged in
-        const response = await fetch('http://localhost:5001/api/user/trips', {
+        const response = await fetch(`${API_BASE_URL}/api/user/trips`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

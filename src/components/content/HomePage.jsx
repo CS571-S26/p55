@@ -33,7 +33,7 @@ const HomePage = () => {
         let images = [];
         
         try {
-          const res = await fetch('http://localhost:5001/api/image', {
+          const res = await fetch(`${API_BASE_URL}/api/image`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ city: d.city, state: d.state || '', country: d.country })
@@ -137,7 +137,7 @@ const HomePage = () => {
     if (authToken) {
       // Save to backend if logged in
       try {
-        const response = await fetch('http://localhost:5001/api/user/trips', {
+        const response = await fetch(`${API_BASE_URL}/api/user/trips`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

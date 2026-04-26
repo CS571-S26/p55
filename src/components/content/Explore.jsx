@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Form, Spinner } from 'react-bootstrap';
 import CardSwiper from './CardSwiper';
 import destinationsData from '../../assets/Worldwide_Travel_Cities.json';
+import API_BASE_URL from '../../config/api';
 
 const Explore = () => {
   const [input, setInput] = useState(() => localStorage.getItem('exploreInput') || '');
@@ -45,7 +46,7 @@ const Explore = () => {
   async function getGeminiRecommendations(userInput, startIndex = 0) {
     const prompt = `Given the following travel destinations data (as JSON array), and the user's preferences, recommend the top 8 cities.\n\nUser preferences: ${userInput}\n\nDestinations data:\n${JSON.stringify(destinationsData.slice(startIndex, startIndex + BATCH_SIZE))}\n\nReturn a JSON array of objects with keys: city, country, description, budget_level.`;
     
-    const res = await fetch('http://localhost:5001/api/gemini', {
+    const res = await fetch(`${API_BASE_URL}/api/gemini`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -82,7 +83,7 @@ const Explore = () => {
         enrichedResults.map(async (d) => {
           let images = [];
           try {
-            const res = await fetch('http://localhost:5001/api/image', {
+            const res = await fetch(`${API_BASE_URL}/api/image`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ city: d.city, state: d.state || '', country: d.country })
@@ -172,7 +173,7 @@ const Explore = () => {
         enrichedResults.map(async (d) => {
           let images = [];
           try {
-            const res = await fetch('http://localhost:5001/api/image', {
+            const res = await fetch(`${API_BASE_URL}/api/image`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ city: d.city, state: d.state || '', country: d.country })
@@ -248,7 +249,7 @@ const Explore = () => {
     if (authToken) {
       // Save to backend if logged in
       try {
-        const response = await fetch('http://localhost:5001/api/user/trips', {
+        const response = await fetch(`${API_BASE_URL}/api/user/trips`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

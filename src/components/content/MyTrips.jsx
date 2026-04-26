@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner, Modal, Form, Image } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import ImageCarousel from './ImageCarousel';
+import API_BASE_URL from '../../config/api';
 
 const MyTrips = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const MyTrips = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5001/api/user/trips', {
+      const response = await fetch(`${API_BASE_URL}/api/user/trips`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -50,7 +51,7 @@ const MyTrips = () => {
           trips.map(async (trip) => {
             let images = [];
             try {
-              const res = await fetch('http://localhost:5001/api/image', {
+              const res = await fetch(`${API_BASE_URL}/api/image`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ city: trip.city, country: trip.country })
@@ -93,7 +94,7 @@ const MyTrips = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/api/user/trips/${encodeURIComponent(city)}/${encodeURIComponent(country)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/trips/${encodeURIComponent(city)}/${encodeURIComponent(country)}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ const MyTrips = () => {
 
       try {
         for (const trip of savedTrips) {
-          await fetch(`http://localhost:5001/api/user/trips/${encodeURIComponent(trip.city)}/${encodeURIComponent(trip.country)}`, {
+          await fetch(`${API_BASE_URL}/api/user/trips/${encodeURIComponent(trip.city)}/${encodeURIComponent(trip.country)}`, {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
@@ -177,7 +178,7 @@ const MyTrips = () => {
       Return ONLY a valid JSON array with objects containing: title (string - activity name), location (string - specific attraction or landmark name), activities (array of strings with specific recommendations).
       Example: [{"title":"Explore the Eiffel Tower","location":"Eiffel Tower","activities":["Take the elevator to the top","Enjoy panoramic city views","Visit the gift shop"]},{"title":"Visit the Louvre Museum","location":"Louvre Museum","activities":["See the Mona Lisa","Browse classical sculptures","Explore Egyptian artifacts"]}]`;
 
-      const res = await fetch('http://localhost:5001/api/gemini', {
+      const res = await fetch(`${API_BASE_URL}/api/gemini`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
