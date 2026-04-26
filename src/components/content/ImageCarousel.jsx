@@ -3,7 +3,7 @@ import Carousel from 'react-bootstrap/Carousel';
 import PropTypes from 'prop-types';
 import '../../css/ImageCarousel.css';
 
-const ImageCarousel = ({ images, fallbackImage = 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=600&q=80' }) => {
+const ImageCarousel = ({ images, fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="200"%3E%3Crect width="600" height="200" fill="%23e0e0e0"/%3E%3Ctext x="50%25" y="50%25" font-size="20" fill="%23999" text-anchor="middle" dominant-baseline="middle"%3ENo Image Available%3C/text%3E%3C/svg%3E' }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Reset to first image when images change

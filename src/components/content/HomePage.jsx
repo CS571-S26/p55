@@ -4,6 +4,7 @@ import { Container, Row, Col, Button, Modal } from 'react-bootstrap';
 import CardSwiper from './CardSwiper';
 import '../../css/HomePage.css';
 import destinationsData from '../../assets/Worldwide_Travel_Cities.json';
+import API_BASE_URL from '../../config/api';
 
 const HomePage = () => {
   const [showModal, setShowModal] = useState(false);
