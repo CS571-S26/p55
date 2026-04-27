@@ -308,7 +308,7 @@ Make the itinerary realistic, practical, and personalized to the interests provi
                     }}
                     className="btn-save"
                   >
-                    📅 Save Activity Itinerary
+                    📅 Save Itinerary
                   </Button>
                 </div>
               </div>
@@ -380,7 +380,7 @@ Make the itinerary realistic, practical, and personalized to the interests provi
 
       <Modal show={showSaveModal} onHide={() => setShowSaveModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>{saveMode === 'itinerary' ? 'Save Your Activity Itinerary' : 'Save Your Trip'}</Modal.Title>
+          <Modal.Title>{saveMode === 'itinerary' ? 'Save Your Itinerary' : 'Save Your Trip'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>

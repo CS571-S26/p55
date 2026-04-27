@@ -89,13 +89,45 @@ const MyTrips = () => {
     }
   };
 
-  const fetchItineraries = () => {
+  const fetchItineraries = async () => {
     try {
-      const itineraries = JSON.parse(localStorage.getItem('savedItineraries') || '[]');
-      setSavedItineraries(itineraries);
+      const authToken = localStorage.getItem('authToken');
+      
+      if (!authToken) {
+        // Fallback to localStorage if not logged in
+        const itineraries = JSON.parse(localStorage.getItem('savedItineraries') || '[]');
+        setSavedItineraries(itineraries);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/user/itineraries`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (response.ok) {
+        const itineraries = await response.json();
+        setSavedItineraries(itineraries);
+      } else if (response.status === 401) {
+        // Token invalid, fallback to localStorage
+        const itineraries = JSON.parse(localStorage.getItem('savedItineraries') || '[]');
+        setSavedItineraries(itineraries);
+      } else {
+        console.error('Failed to fetch itineraries from server');
+        setSavedItineraries([]);
+      }
     } catch (err) {
       console.error('Error fetching itineraries:', err);
-      setSavedItineraries([]);
+      // Fallback to localStorage on error
+      try {
+        const itineraries = JSON.parse(localStorage.getItem('savedItineraries') || '[]');
+        setSavedItineraries(itineraries);
+      } catch {
+        setSavedItineraries([]);
+      }
     }
   };
 
@@ -463,9 +495,9 @@ const MyTrips = () => {
               <Row className="mb-3">
                 <Col>
                   <Alert variant="warning" dismissible>
-                    <Alert.Heading>📌 Sign In to Save Your Activity Itineraries</Alert.Heading>
+                    <Alert.Heading>📌 Sign In to Save Your Itineraries</Alert.Heading>
                     <p className="mb-2">
-                      You're currently viewing activity itineraries stored on this device only. They will be lost if you clear your browser data or switch devices.
+                      You're currently viewing itineraries stored on this device only. They will be lost if you clear your browser data or switch devices.
                     </p>
                     <Button 
                       variant="primary" 
@@ -490,7 +522,7 @@ const MyTrips = () => {
               <Row>
                 <Col>
                   <Alert variant="info">
-                    You haven't saved any activity itineraries yet. Generate activities from the Trip Generator!
+                    You haven't saved any itineraries yet. Generate activities from the Trip Generator!
                   </Alert>
                 </Col>
               </Row>
@@ -500,20 +532,15 @@ const MyTrips = () => {
                   <Col md={6} lg={4} key={index} className="mb-4">
                     <Card className="h-100 shadow">
                       <Card.Body>
-                        <Card.Title>{itinerary.city}, {itinerary.country}</Card.Title>
-                        <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                          <strong>Saved:</strong> {new Date(itinerary.savedAt).toLocaleDateString()}
-                        </p>
-                        {itinerary.title && (
-                          <p style={{ fontSize: '0.95rem', color: '#555', marginBottom: '1rem' }}>
-                            <strong>{itinerary.title}</strong>
-                          </p>
-                        )}
+                        <Card.Title>{itinerary.title}</Card.Title>
                         {itinerary.duration && (
-                          <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                          <p style={{ fontSize: '0.9rem', color: '#666' }}>
                             <strong>Duration:</strong> {itinerary.duration} days
                           </p>
                         )}
+                        <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                          <strong>Saved:</strong> {new Date(itinerary.savedAt).toLocaleDateString()}
+                        </p>
                       </Card.Body>
                       <Card.Footer className="bg-white border-top">
                         <Button 
