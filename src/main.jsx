@@ -5,6 +5,7 @@ import Layout from './components/content/Layout';
 import HomePage from './components/content/HomePage';
 import MyTrips from './components/content/MyTrips';
 import Explore from './components/content/Explore';
+import Itinerary from './components/content/Itinerary';
 import ProfileMain from './components/content/ProfileMain';
 import ProfileLogin from './components/content/ProfileLogin';
 import ProfileSignup from './components/content/ProfileSignup';
@@ -19,6 +20,7 @@ root.render(
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="mytrips" element={<MyTrips />} />
+          <Route path="itinerary" element={<Itinerary />} />
           <Route path="explore" element={<Explore />} />
           <Route path="profile" element={<ProfileMain />} />
           <Route path="profile/login" element={<ProfileLogin />} />
