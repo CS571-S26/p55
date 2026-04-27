@@ -57,12 +57,12 @@ const ProfileLogin = () => {
 
   return (
     <div className="p-4">
-      <h2>Log In</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      <h1>Log In</h1>
+      {error && <div className="alert alert-danger" role="alert" aria-live="polite">{error}</div>}
+      {success && <div className="alert alert-success" role="alert" aria-live="polite">{success}</div>}
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label htmlFor="loginEmail" className="form-label">Email address</label>
+          <label htmlFor="loginEmail" className="form-label">Email address <span aria-label="required">*</span></label>
           <input
             type="email"
             className="form-control"
@@ -71,10 +71,11 @@ const ProfileLogin = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={loading}
+            aria-required="true"
           />
         </div>
         <div className="mb-3">
-          <label htmlFor="loginPassword" className="form-label">Password</label>
+          <label htmlFor="loginPassword" className="form-label">Password <span aria-label="required">*</span></label>
           <input
             type="password"
             className="form-control"
@@ -83,6 +84,7 @@ const ProfileLogin = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             disabled={loading}
+            aria-required="true"
           />
         </div>
         <button

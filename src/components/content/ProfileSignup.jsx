@@ -63,12 +63,12 @@ const ProfileSignup = () => {
 
   return (
     <div className="p-4">
-      <h2>Sign Up</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      <h1>Sign Up</h1>
+      {error && <div className="alert alert-danger" role="alert" aria-live="polite">{error}</div>}
+      {success && <div className="alert alert-success" role="alert" aria-live="polite">{success}</div>}
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label htmlFor="signupEmail" className="form-label">Email address</label>
+          <label htmlFor="signupEmail" className="form-label">Email address <span aria-label="required">*</span></label>
           <input
             type="email"
             className="form-control"
@@ -77,10 +77,11 @@ const ProfileSignup = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={loading}
+            aria-required="true"
           />
         </div>
         <div className="mb-3">
-          <label htmlFor="signupPassword" className="form-label">Password</label>
+          <label htmlFor="signupPassword" className="form-label">Password <span aria-label="required">*</span></label>
           <input
             type="password"
             className="form-control"
@@ -89,10 +90,11 @@ const ProfileSignup = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             disabled={loading}
+            aria-required="true"
           />
         </div>
         <div className="mb-3">
-          <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+          <label htmlFor="confirmPassword" className="form-label">Confirm Password <span aria-label="required">*</span></label>
           <input
             type="password"
             className="form-control"
@@ -101,6 +103,7 @@ const ProfileSignup = () => {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             disabled={loading}
+            aria-required="true"
           />
         </div>
         <button

@@ -2,41 +2,91 @@
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
   padding: 2rem 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.itinerary-container p {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .itinerary-container h1 {
   font-weight: 700;
-  color: #2c3e50;
+  color: #1a2332;
   font-size: 2.5rem;
   margin-bottom: 2rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .itinerary-container h2 {
   color: #2c3e50;
   font-weight: 600;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.itinerary-container .d-flex {
+  flex-wrap: wrap;
+  align-items: flex-start !important;
+}
+
+.itinerary-container .d-flex > div:first-child {
+  flex: 1 1 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.itinerary-container .d-flex > div:first-child .mb-3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.itinerary-container .btn-save {
+  flex-shrink: 0;
+  margin-top: 0.5rem;
+  margin-left: 1rem;
 }
 
 .itinerary-container h4 {
   color: #34495e;
   font-weight: 600;
   margin-top: 1.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .itinerary-container h5 {
   color: #34495e;
   font-weight: 600;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .itinerary-container h6 {
   color: #555;
   font-weight: 600;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .itinerary-container Card {
   border: none;
   border-radius: 10px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .itinerary-container Card:hover {
@@ -53,11 +103,18 @@
   font-size: 1.1rem;
   transition: all 0.3s ease;
   color: white;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .btn-generate:hover:not(:disabled) {
   transform: scale(1.02);
   box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-generate:focus {
+  outline: 3px solid #0d4f6a;
+  outline-offset: 2px;
 }
 
 .btn-generate:disabled {
@@ -69,21 +126,32 @@
   border-radius: 8px;
   font-weight: 600;
   padding: 8px 20px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .btn-save:hover {
   transform: scale(1.05);
 }
 
+.btn-save:focus {
+  outline: 3px solid #0d4f6a;
+  outline-offset: 2px;
+}
+
 .transport-section {
   border-left: 4px solid #667eea;
   background-color: #f8f9fa;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .transport-section p {
   margin-bottom: 0;
   color: #555;
   line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .days-section {
@@ -93,6 +161,8 @@
 .activity-item {
   border-left: 3px solid #764ba2;
   transition: all 0.3s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .activity-item:hover {
@@ -103,11 +173,16 @@
 .activity-item h6 {
   color: #2c3e50;
   margin-bottom: 0.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .activity-item .text-muted {
   color: #666 !important;
   font-size: 0.95rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .meals {
@@ -115,49 +190,79 @@
   padding: 1rem;
   border-radius: 6px;
   border-left: 3px solid #f39c12;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .meals h6 {
   color: #d35400;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .meals p {
   color: #555;
   margin-bottom: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+  font-size: 0.95rem;
 }
 
 .tips {
   border-left: 4px solid #f39c12;
+  background-color: #fffbf0 !important;
+  opacity: 1 !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .tips h6 {
   color: #d35400;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .tips p {
-  color: #555;
+  color: #333;
+  font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .packing-section {
   border-left: 4px solid #27ae60;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .packing-section h5 {
   color: #27ae60;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .packing-section .badge {
   font-size: 0.9rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .packing-section span {
   color: #555;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .itinerary-container h1 {
     font-size: 1.8rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .itinerary-container Card {
@@ -166,6 +271,8 @@
 
   .activity-item {
     padding: 0.5rem !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .d-flex.justify-content-between {
@@ -184,11 +291,31 @@
   font-size: 0.9rem;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: inline-block;
+  max-width: 100%;
+  word-break: break-word;
+  white-space: normal !important;
+  line-height: 1.4;
+}
+
+.itinerary-container .mb-3 > .badge {
+  margin-bottom: 0.5rem;
+}
+
+.itinerary-container .mb-3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-start;
 }
 
 /* Form styling */
 .itinerary-container Form {
   padding: 1rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .itinerary-container Form.Form {
@@ -202,22 +329,31 @@
   border: 1px solid #ddd;
   padding: 0.75rem;
   font-size: 1rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .itinerary-container .form-control:focus,
 .itinerary-container .form-select:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  border-color: #0d4f6a;
+  box-shadow: 0 0 0 0.2rem rgba(13, 79, 106, 0.25);
+  outline: 2px solid #0d4f6a;
+  outline-offset: 2px;
 }
 
 .itinerary-container .form-label {
   color: #2c3e50;
   margin-bottom: 0.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .itinerary-container .form-text {
   color: #7f8c8d;
   font-size: 0.875rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Alert styling */
@@ -225,17 +361,23 @@
   border-radius: 8px;
   border: none;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Modal styling */
 .modal-content {
   border-radius: 10px;
   border: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .modal-header {
   border-bottom: 2px solid #667eea;
   background-color: #f8f9fa;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .modal-header .btn-close:focus {
@@ -244,6 +386,8 @@
 
 .modal-body {
   padding: 2rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .modal-footer {
@@ -259,6 +403,8 @@
 /* Text utilities */
 .text-muted {
   color: #7f8c8d !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .bg-light {

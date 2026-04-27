@@ -153,13 +153,14 @@ Make the itinerary realistic, practical, and personalized to the interests provi
           <Card className="shadow-sm p-4">
             <Form>
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Where do you want to go?</Form.Label>
+                <Form.Label className="fw-bold">Where do you want to go? <span aria-label="required">*</span></Form.Label>
                 <div className="input-group">
                   <Form.Control
                     placeholder="e.g., Tokyo, France, Southeast Asia"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleGenerateItinerary()}
+                    aria-required="true"
                   />
                 </div>
               </Form.Group>
@@ -286,7 +287,9 @@ Make the itinerary realistic, practical, and personalized to the interests provi
                       {day.meals && (
                         <div className="meals mb-4">
                           <h6 className="fw-bold mb-2">🍽️ Meals</h6>
-                          <p>{day.meals.join(' • ')}</p>
+                          {day.meals.map((meal, idx) => (
+                            <p key={idx} className="mb-1">{meal}</p>
+                          ))}
                         </div>
                       )}
 

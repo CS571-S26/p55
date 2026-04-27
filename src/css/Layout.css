@@ -13,16 +13,17 @@
 .tripgenie-navbar-brand {
   font-weight: 700;
   font-size: 1.5rem;
-  color: #2193b0;
+  color: #0d4f6a;
 }
 
 .tripgenie-navbar-logo {
   width: 48px !important;
   height: 48px !important;
+  alt: "TripGenie logo";
 }
 
 .tripgenie-navbar-title {
   font-weight: 700;
   font-size: 1.5rem;
-  color: #2193b0;
+  color: #0d4f6a;
 }

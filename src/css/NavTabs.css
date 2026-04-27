@@ -1,6 +1,6 @@
 /* Navigation Tabs */
 .tripgenie-tabs .nav-link {
-  color: #2193b0;
+  color: #0d4f6a;
   font-weight: 500;
   font-size: 1.1rem;
   border: none;
@@ -9,14 +9,14 @@
 }
 
 .tripgenie-tabs .nav-link:hover {
-  color: #17627a;
-  border-bottom: 2px solid #6dd5ed;
+  color: #081e2a;
+  border-bottom: 2px solid #0d4f6a;
 }
 
 .tripgenie-tabs .nav-link.active,
 .tripgenie-tabs .tripgenie-tab-active {
-  color: #17627a !important;
-  border-bottom: 3px solid #2193b0 !important;
-  background: #eaf6fa;
+  color: #081e2a !important;
+  border-bottom: 3px solid #0d4f6a !important;
+  background: #c5e7f0;
   font-weight: 700;
 }

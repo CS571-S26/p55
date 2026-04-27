@@ -19,29 +19,32 @@
 .tripgenie-logo {
   width: 120px;
   height: auto;
+  alt: "TripGenie logo";
 }
 
 .tripgenie-title {
   font-size: 2.8rem;
   font-weight: 700;
-  color: #2193b0;
+  color: #0d4f6a;
   margin-bottom: 16px;
 }
 
 .tripgenie-subtitle {
   font-size: 1.25rem;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .tripgenie-get-started {
   font-size: 1.15rem;
   padding: 12px 36px;
   border-radius: 30px;
-  background: linear-gradient(90deg, #6dd5ed 0%, #2193b0 100%);
+  background: linear-gradient(90deg, #0d5f7f 0%, #0b4158 100%);
   border: none;
   transition: background 0.2s;
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .tripgenie-get-started:hover {
-  background: linear-gradient(90deg, #2193b0 0%, #6dd5ed 100%);
+  background: linear-gradient(90deg, #0b4158 0%, #0d5f7f 100%);
 }
