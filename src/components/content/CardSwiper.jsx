@@ -7,13 +7,13 @@ import API_BASE_URL from '../../config/api';
 // Simple swipeable card stack for travel destinations
 const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRight, onSwipeLeft, onReachedEnd }) => {
   const [current, setCurrent] = useState(initialIndex);
-  const [showItineraryModal, setShowItineraryModal] = useState(false);
-  const [itineraryInput, setItineraryInput] = useState('');
-  const [itinerary, setItinerary] = useState('');
-  const [itineraryItems, setItineraryItems] = useState([]);
-  const [loadingItinerary, setLoadingItinerary] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [activityInput, setActivityInput] = useState('');
+  const [activity, setActivity] = useState('');
+  const [activityItems, setActivityItems] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
   const [selectedItems, setSelectedItems] = useState(new Set());
-  const [savingItinerary, setSavingItinerary] = useState(false);
+  const [savingActivity, setSavingActivity] = useState(false);
 
   // Notify parent when current index changes
   useEffect(() => {
@@ -52,10 +52,10 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
 
   const dest = destinations[current];
 
-  const handleGenerateItinerary = async () => {
-    setLoadingItinerary(true);
+  const handleGenerateActivity = async () => {
+    setLoadingActivity(true);
     try {
-      const prompt = `Create a detailed itinerary for ${dest.city}, ${dest.country}. 
+      const prompt = `Create a detailed list of recommended activities for ${dest.city}, ${dest.country}. 
       The user's preferences: ${itineraryInput || 'General exploration'}.
       The destination is best for: ${dest.bestFor || 'General tourism'}.
       Ideal duration: ${dest.idealDuration || 'Flexible'}.
@@ -74,22 +74,22 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
         })
       });
 
-      if (!res.ok) throw new Error('Failed to generate itinerary');
+      if (!res.ok) throw new Error('Failed to generate activities');
       
       const data = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       
-      // Parse itinerary into items and fetch images
-      await parseAndEnhanceItinerary(text);
+      // Parse activities into items
+      await parseAndEnhanceActivity(text);
     } catch (e) {
-      console.error('Error generating itinerary:', e);
-      setItinerary('Failed to generate itinerary. Please try again.');
-      setItineraryItems([]);
+      console.error('Error generating activities:', e);
+      setActivity('Failed to generate activities. Please try again.');
+      setActivityItems([]);
     }
-    setLoadingItinerary(false);
+    setLoadingActivity(false);
   };
 
-  const parseAndEnhanceItinerary = async (text) => {
+  const parseAndEnhanceActivity = async (text) => {
     const stripMarkdown = (str) => {
       if (!str) return '';
       return str
@@ -112,7 +112,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
         if (jsonMatch) {
           items = JSON.parse(jsonMatch[0]);
         } else {
-          throw new Error('Could not parse itinerary JSON');
+          throw new Error('Could not parse activities JSON');
         }
       }
 
@@ -133,11 +133,11 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
 
       setItineraryItems(enhancedItems);
       setSelectedItems(new Set(enhancedItems.map(item => item.id)));
-      setItinerary('parsed'); // Mark as having valid itinerary
+      setActivity('parsed'); // Mark as having valid activities
     } catch (e) {
-      console.error('Error parsing itinerary:', e);
-      setItinerary('');
-      setItineraryItems([]);
+      console.error('Error parsing activities:', e);
+      setActivity('');
+      setActivityItems([]);
     }
   };
 
@@ -151,23 +151,23 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
     setSelectedItems(newSelected);
   };
 
-  const handleOpenItineraryModal = () => {
-    setItineraryInput('');
-    setItinerary('');
-    setShowItineraryModal(true);
+  const handleOpenActivityModal = () => {
+    setActivityInput('');
+    setActivity('');
+    setShowActivityModal(true);
   };
 
-  const handleCloseItineraryModal = () => {
-    setShowItineraryModal(false);
+  const handleCloseActivityModal = () => {
+    setShowActivityModal(false);
   };
 
-  const handleSaveItinerary = async () => {
-    setSavingItinerary(true);
+  const handleSaveActivity = async () => {
+    setSavingActivity(true);
     try {
-      const selectedItinerary = itineraryItems.filter(item => selectedItems.has(item.id));
+      const selectedActivity = activityItems.filter(item => selectedItems.has(item.id));
       const enhancedDestination = {
         ...dest,
-        selectedItinerary: selectedItinerary
+        selectedActivity: selectedActivity
       };
 
       const authToken = localStorage.getItem('authToken');
@@ -185,12 +185,12 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
 
         if (!response.ok) {
           const data = await response.json();
-          console.error('Failed to save itinerary:', data.error);
-          alert('Failed to save itinerary. Please try again.');
-          setSavingItinerary(false);
+          console.error('Failed to save activities:', data.error);
+          alert('Failed to save activities. Please try again.');
+          setSavingActivity(false);
         } else {
-          setShowItineraryModal(false);
-          setSavingItinerary(false);
+          setShowActivityModal(false);
+          setSavingActivity(false);
           // Move to next location like clicking the Save button
           handleSwipe('right');
         }
@@ -204,21 +204,21 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
           savedTrips.push(enhancedDestination);
         }
         localStorage.setItem('savedTrips', JSON.stringify(savedTrips));
-        setShowItineraryModal(false);
-        setSavingItinerary(false);
+        setShowActivityModal(false);
+        setSavingActivity(false);
         // Move to next location like clicking the Save button
         handleSwipe('right');
       }
     } catch (err) {
-      console.error('Error saving itinerary:', err);
-      alert('Failed to save itinerary. Please try again.');
-      setSavingItinerary(false);
+      console.error('Error saving activity:', err);
+      alert('Failed to save activities. Please try again.');
+      setSavingActivity(false);
     }
   };
 
   return (
     <div className="d-flex flex-column align-items-center">
-      <Card style={{ width: '22rem', minHeight: '32rem', cursor: 'pointer' }} className="mb-3 shadow" onClick={handleOpenItineraryModal}>
+      <Card style={{ width: '22rem', minHeight: '32rem', cursor: 'pointer' }} className="mb-3 shadow" onClick={handleOpenActivityModal}>
         <div onClick={(e) => e.stopPropagation()}>
           <ImageCarousel images={dest.images} />
         </div>
@@ -232,7 +232,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
             {dest.idealDuration && <li><b>Ideal Duration:</b> {dest.idealDuration}</li>}
             {dest.attractions && <li><b>Top Attractions:</b> {dest.attractions}</li>}
           </ul>
-          <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '10px' }}>Click to create an itinerary</p>
+          <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '10px' }}>Click to create an activity list</p>
         </Card.Body>
       </Card>
       <div>
@@ -240,13 +240,13 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
         <Button variant="success" onClick={() => handleSwipe('right')}>❤️ Save</Button>
       </div>
 
-      {/* Itinerary Modal */}
-      <Modal show={showItineraryModal} onHide={handleCloseItineraryModal} centered size="xl">
+      {/* Activity Modal */}
+      <Modal show={showActivityModal} onHide={handleCloseActivityModal} centered size="xl">
         <Modal.Header closeButton>
-          <Modal.Title>Create Your Itinerary - {dest.city}{dest.state ? ', ' + dest.state : ''}, {dest.country}</Modal.Title>
+          <Modal.Title>Create Activity List - {dest.city}{dest.state ? ', ' + dest.state : ''}, {dest.country}</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-          {!itinerary ? (
+          {!activity ? (
             <div>
               <Form.Group className="mb-3">
                 <Form.Label><b>Describe what you would like to do:</b></Form.Label>
@@ -254,33 +254,33 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
                   as="textarea"
                   rows={3}
                   placeholder="E.g., I have 5 days, love beach activities and local cuisine. I'm traveling with family and prefer a mix of relaxation and exploration on a mid-range budget."
-                  value={itineraryInput}
-                  onChange={(e) => setItineraryInput(e.target.value)}
+                  value={activityInput}
+                  onChange={(e) => setActivityInput(e.target.value)}
                 />
               </Form.Group>
               <Button 
                 variant="primary" 
-                onClick={handleGenerateItinerary} 
-                disabled={loadingItinerary}
+                onClick={handleGenerateActivity} 
+                disabled={loadingActivity}
                 className="w-100"
               >
                 {loadingItinerary ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
-                    Generating Itinerary...
+                    Generating Activities...
                   </>
                 ) : (
-                  'Generate AI Itinerary'
+                  'Generate AI Activity List'
                 )}
               </Button>
             </div>
           ) : (
             <div>
-              {itineraryItems.length > 0 ? (
+              {activityItems.length > 0 ? (
                 <div>
                   <p className="mb-3"><b>Select the activities you'd like to include:</b></p>
                   <Row className="g-3">
-                    {itineraryItems.map((item) => (
+                    {activityItems.map((item) => (
                       <Col key={item.id} xs={12}>
                         <Card className="h-100" style={{ border: selectedItems.has(item.id) ? '2px solid #0d6efd' : '1px solid #ddd' }}>
                           <Card.Body>
@@ -321,26 +321,26 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
                 <Button 
                   variant="secondary" 
                   onClick={() => {
-                    setItinerary('');
-                    setItineraryItems([]);
+                    setActivity('');
+                    setActivityItems([]);
                   }}
                   className="w-100 mb-2"
                 >
-                  Generate Another Itinerary
+                  Generate Another Activity List
                 </Button>
                 <Button 
                   variant="success" 
-                  onClick={handleSaveItinerary}
-                  disabled={savingItinerary || selectedItems.size === 0}
+                  onClick={handleSaveActivity}
+                  disabled={savingActivity || selectedItems.size === 0}
                   className="w-100"
                 >
-                  {savingItinerary ? (
+                  {savingActivity ? (
                     <>
                       <Spinner animation="border" size="sm" className="me-2" />
                       Saving...
                     </>
                   ) : (
-                    '💾 Save Itinerary'
+                    '💾 Save Activities'
                   )}
                 </Button>
               </div>

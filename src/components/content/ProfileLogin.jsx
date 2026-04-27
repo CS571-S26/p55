@@ -10,6 +10,65 @@ const ProfileLogin = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const syncLocalStorageToDatabase = async (authToken) => {
+    try {
+      // Get saved trips from localStorage
+      const savedTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+      
+      // Get saved itineraries from localStorage
+      const savedItineraries = JSON.parse(localStorage.getItem('savedItineraries') || '[]');
+
+      // Sync trips to database
+      for (const trip of savedTrips) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/user/trips`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(trip)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.warn('Failed to sync trip:', errorData);
+            // Continue with other trips even if one fails
+          }
+        } catch (tripError) {
+          console.error('Error syncing trip:', tripError);
+        }
+      }
+
+      // Sync itineraries to database
+      for (const itinerary of savedItineraries) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/user/itineraries`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(itinerary)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.warn('Failed to sync itinerary:', errorData);
+            // Continue with other itineraries even if one fails
+          }
+        } catch (itineraryError) {
+          console.error('Error syncing itinerary:', itineraryError);
+        }
+      }
+
+      console.log('Sync completed: ' + savedTrips.length + ' trips and ' + savedItineraries.length + ' itineraries synced');
+    } catch (err) {
+      console.error('Error during sync:', err);
+      // Don't throw error - sync is non-critical
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -38,6 +97,9 @@ const ProfileLogin = () => {
         localStorage.setItem('authToken', data.session.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
         console.log('Logged in:', data.user);
+
+        // Sync localStorage data to database
+        await syncLocalStorageToDatabase(data.session.access_token);
       }
 
       setEmail('');

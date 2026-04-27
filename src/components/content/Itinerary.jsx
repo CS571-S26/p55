@@ -12,9 +12,9 @@ const Itinerary = () => {
   const [loading, setLoading] = useState(false);
   const [itinerary, setItinerary] = useState(null);
   const [error, setError] = useState('');
-  const [saveTrip, setSaveTrip] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [tripName, setTripName] = useState('');
+  const [saveMode, setSaveMode] = useState('itinerary'); // 'trip' or 'itinerary'
 
   const handleGenerateItinerary = async () => {
     if (!location.trim()) {
@@ -95,6 +95,58 @@ Make the itinerary realistic, practical, and personalized to the interests provi
   const handleSaveTrip = async () => {
     const authToken = localStorage.getItem('authToken');
     
+    if (saveMode === 'itinerary') {
+      // Save as itinerary
+      if (!authToken) {
+        // Save locally if not authenticated
+        const itineraryToSave = {
+          ...itinerary,
+          city: itinerary.location,
+          country: locationType === 'continent' ? 'Multiple Countries' : itinerary.location,
+          title: tripName,
+          savedAt: new Date().toISOString()
+        };
+        const savedItineraries = JSON.parse(localStorage.getItem('savedItineraries') || '[]');
+        savedItineraries.push(itineraryToSave);
+        localStorage.setItem('savedItineraries', JSON.stringify(savedItineraries));
+        setShowSaveModal(false);
+        setError('');
+        alert('Activity itinerary saved locally!');
+        return;
+      }
+
+      try {
+        const itineraryToSave = {
+          ...itinerary,
+          city: itinerary.location,
+          country: locationType === 'continent' ? 'Multiple Countries' : itinerary.location,
+          title: tripName,
+          savedAt: new Date().toISOString()
+        };
+
+        const response = await fetch(`${API_BASE_URL}/api/user/itineraries`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(itineraryToSave)
+        });
+
+        if (response.ok) {
+          setShowSaveModal(false);
+          setError('');
+          alert('Activity itinerary saved successfully!');
+        } else {
+          throw new Error('Failed to save itinerary');
+        }
+      } catch (err) {
+        setError('Failed to save itinerary: ' + err.message);
+      }
+      return;
+    }
+
+    // Original trip save logic (not used in new version)
     if (!authToken) {
       // Save locally if not authenticated
       const savedTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
@@ -108,7 +160,6 @@ Make the itinerary realistic, practical, and personalized to the interests provi
       savedTrips.push(newTrip);
       localStorage.setItem('savedTrips', JSON.stringify(savedTrips));
       setShowSaveModal(false);
-      setSaveTrip(false);
       setError('');
       alert('Trip saved locally!');
       return;
@@ -131,7 +182,6 @@ Make the itinerary realistic, practical, and personalized to the interests provi
 
       if (response.ok) {
         setShowSaveModal(false);
-        setSaveTrip(false);
         setError('');
         alert('Trip saved successfully!');
       } else {
@@ -248,13 +298,19 @@ Make the itinerary realistic, practical, and personalized to the interests provi
                     <Badge bg="success" className="me-2 px-3 py-2">{itinerary.budget_estimate}</Badge>
                   </div>
                 </div>
-                <Button
-                  variant="outline-primary"
-                  onClick={() => setShowSaveModal(true)}
-                  className="btn-save"
-                >
-                  ⭐ Save Trip
-                </Button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <Button
+                    variant="outline-info"
+                    onClick={() => {
+                      setSaveMode('itinerary');
+                      setTripName(`${itinerary.location} - ${duration} Days`);
+                      setShowSaveModal(true);
+                    }}
+                    className="btn-save"
+                  >
+                    📅 Save Activity Itinerary
+                  </Button>
+                </div>
               </div>
 
               <div className="transport-section mb-5 p-3 bg-light rounded">
@@ -324,16 +380,16 @@ Make the itinerary realistic, practical, and personalized to the interests provi
 
       <Modal show={showSaveModal} onHide={() => setShowSaveModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Save Your Trip</Modal.Title>
+          <Modal.Title>{saveMode === 'itinerary' ? 'Save Your Activity Itinerary' : 'Save Your Trip'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             <Form.Group>
-              <Form.Label>Trip Name</Form.Label>
+              <Form.Label>{saveMode === 'itinerary' ? 'Itinerary Name' : 'Trip Name'}</Form.Label>
               <Form.Control
                 value={tripName}
                 onChange={(e) => setTripName(e.target.value)}
-                placeholder="e.g., Summer 2024 Tokyo Adventure"
+                placeholder={saveMode === 'itinerary' ? "e.g., Paris City Exploration" : "e.g., Summer 2024 Tokyo Adventure"}
               />
             </Form.Group>
           </Form>
@@ -343,7 +399,7 @@ Make the itinerary realistic, practical, and personalized to the interests provi
             Cancel
           </Button>
           <Button variant="primary" onClick={handleSaveTrip}>
-            Save Trip
+            {saveMode === 'itinerary' ? 'Save Itinerary' : 'Save Trip'}
           </Button>
         </Modal.Footer>
       </Modal>

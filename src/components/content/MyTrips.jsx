@@ -2,25 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner, Modal, Form, Image } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import ImageCarousel from './ImageCarousel';
+import ItineraryDisplay from './ItineraryDisplay';
 import API_BASE_URL from '../../config/api';
 
 const MyTrips = () => {
   const navigate = useNavigate();
   const [savedTrips, setSavedTrips] = useState([]);
+  const [savedItineraries, setSavedItineraries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState('trips');
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [showItineraryModal, setShowItineraryModal] = useState(false);
   const [itineraryInput, setItineraryInput] = useState('');
   const [itineraryItems, setItineraryItems] = useState([]);
   const [loadingItinerary, setLoadingItinerary] = useState(false);
   const [selectedItems, setSelectedItems] = useState(new Set());
+  const [showDeleteItineraryConfirm, setShowDeleteItineraryConfirm] = useState(null);
+  const [selectedItinerary, setSelectedItinerary] = useState(null);
+  const [showFullItineraryView, setShowFullItineraryView] = useState(false);
 
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
     setIsAuthenticated(!!authToken);
     fetchTrips();
+    fetchItineraries();
   }, []);
 
   const fetchTrips = async () => {
@@ -79,6 +86,16 @@ const MyTrips = () => {
       setError('Error fetching trips: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchItineraries = () => {
+    try {
+      const itineraries = JSON.parse(localStorage.getItem('savedItineraries') || '[]');
+      setSavedItineraries(itineraries);
+    } catch (err) {
+      console.error('Error fetching itineraries:', err);
+      setSavedItineraries([]);
     }
   };
 
@@ -257,6 +274,59 @@ const MyTrips = () => {
     setSelectedItems(newSelected);
   };
 
+  const handleSaveItinerary = async () => {
+    if (!selectedTrip) return;
+
+    try {
+      const selectedActivities = itineraryItems.filter(item => selectedItems.has(item.id));
+      const updatedTrip = {
+        ...selectedTrip,
+        selectedItinerary: selectedActivities
+      };
+
+      const authToken = localStorage.getItem('authToken');
+
+      // Update localStorage
+      const updatedTrips = savedTrips.map(trip =>
+        trip.city === selectedTrip.city && trip.country === selectedTrip.country
+          ? updatedTrip
+          : trip
+      );
+      setSavedTrips(updatedTrips);
+      localStorage.setItem('savedTrips', JSON.stringify(updatedTrips));
+
+      // If authenticated, also update on the server
+      if (authToken) {
+        const response = await fetch(`${API_BASE_URL}/api/user/trips`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(updatedTrip)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
+      }
+
+      handleCloseItineraryModal();
+      alert('Activities saved successfully!');
+    } catch (err) {
+      console.error('Error saving activities:', err);
+      alert('Failed to save activities: ' + err.message);
+    }
+  };
+
+  const handleDeleteItinerary = (index) => {
+    const updatedItineraries = savedItineraries.filter((_, i) => i !== index);
+    setSavedItineraries(updatedItineraries);
+    localStorage.setItem('savedItineraries', JSON.stringify(updatedItineraries));
+    setShowDeleteItineraryConfirm(null);
+  };
+
   if (loading) {
     return (
       <div className="p-4 d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
@@ -270,8 +340,25 @@ const MyTrips = () => {
       <Container>
         <Row className="mb-4">
           <Col>
-            <h2>My Saved Trips</h2>
-            <p>Save, view, and manage your favorite destinations.</p>
+            <h1>My Saved Trips</h1>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
+              <Button 
+                variant={activeTab === 'trips' ? 'primary' : 'outline-primary'}
+                onClick={() => setActiveTab('trips')}
+                aria-selected={activeTab === 'trips'}
+                role="tab"
+              >
+                🗺️ Trips ({savedTrips.length})
+              </Button>
+              <Button 
+                variant={activeTab === 'itineraries' ? 'primary' : 'outline-primary'}
+                onClick={() => setActiveTab('itineraries')}
+                aria-selected={activeTab === 'itineraries'}
+                role="tab"
+              >
+                📅 Itineraries ({savedItineraries.length})
+              </Button>
+            </div>
           </Col>
         </Row>
 
@@ -285,87 +372,213 @@ const MyTrips = () => {
           </Row>
         )}
 
-        {!isAuthenticated && (
-          <Row className="mb-3">
-            <Col>
-              <Alert variant="warning" dismissible>
-                <Alert.Heading>📌 Sign In to Save Your Trips</Alert.Heading>
-                <p className="mb-2">
-                  You're currently viewing trips stored on this device only. They will be lost if you clear your browser data or switch devices.
-                </p>
-                <Button 
-                  variant="primary" 
-                  size="sm"
-                  onClick={() => navigate('/profile/login')}
-                  className="me-2"
-                >
-                  Log In
-                </Button>
-                <Button 
-                  variant="success" 
-                  size="sm"
-                  onClick={() => navigate('/profile/signup')}
-                >
-                  Sign Up
-                </Button>
-              </Alert>
-            </Col>
-          </Row>
+        {activeTab === 'trips' && (
+          <>
+            {!isAuthenticated && (
+              <Row className="mb-3">
+                <Col>
+                  <Alert variant="warning" dismissible>
+                    <Alert.Heading>📌 Sign In to Save Your Trips</Alert.Heading>
+                    <p className="mb-2">
+                      You're currently viewing trips stored on this device only. They will be lost if you clear your browser data or switch devices.
+                    </p>
+                    <Button 
+                      variant="primary" 
+                      size="sm"
+                      onClick={() => navigate('/profile/login')}
+                      className="me-2"
+                    >
+                      Log In
+                    </Button>
+                    <Button 
+                      variant="success" 
+                      size="sm"
+                      onClick={() => navigate('/profile/signup')}
+                    >
+                      Sign Up
+                    </Button>
+                  </Alert>
+                </Col>
+              </Row>
+            )}
+
+            {savedTrips.length === 0 ? (
+              <Row>
+                <Col>
+                  <Alert variant="info">
+                    You haven't saved any trips yet. Explore destinations and save your favorites!
+                  </Alert>
+                </Col>
+              </Row>
+            ) : (
+              <>
+                <Row className="mb-3">
+                  <Col>
+                    <p><strong>Total Saved Trips:</strong> {savedTrips.length}</p>
+                    <Button variant="danger" size="sm" onClick={handleClearAll}>
+                      Clear All Trips
+                    </Button>
+                  </Col>
+                </Row>
+                <Row>
+                  {savedTrips.map((trip, index) => (
+                    <Col md={6} lg={4} key={index} className="mb-4">
+                      <Card className="h-100 shadow">
+                        {trip.images && trip.images.length > 0 ? (
+                          <ImageCarousel images={trip.images} />
+                        ) : trip.image ? (
+                          <Card.Img variant="top" src={trip.image} alt={trip.city} style={{ height: '200px', objectFit: 'cover' }} />
+                        ) : null}
+                        <Card.Body>
+                          <Card.Title>{trip.city}, {trip.country}</Card.Title>
+                          {trip.region && <p style={{ fontSize: '0.85rem', color: '#666' }}>{trip.region.charAt(0).toUpperCase() + trip.region.slice(1).replace('_', ' ')}</p>}
+                          <Card.Text>{trip.description}</Card.Text>
+                          <ul className="text-start small mb-3" style={{ lineHeight: '1.6' }}>
+                            {(trip.budget || trip.cost) && <li><b>Budget Level:</b> {trip.budget || trip.cost}</li>}
+                            {trip.bestFor && <li><b>Best For:</b> {trip.bestFor}</li>}
+                            {trip.idealDuration && <li><b>Ideal Duration:</b> {trip.idealDuration}</li>}
+                            {trip.attractions && <li><b>Top Attractions:</b> {trip.attractions}</li>}
+                          </ul>
+                        </Card.Body>
+                        <Card.Footer className="bg-white border-top">
+                          <Button variant="info" size="sm" onClick={() => handleOpenItineraryModal(trip)} className="me-2">
+                            📅 View/Edit Activities
+                          </Button>
+                          <Button variant="danger" size="sm" onClick={() => handleRemoveTrip(trip.city, trip.country)}>
+                            Remove Trip
+                          </Button>
+                        </Card.Footer>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </>
+            )}
+          </>
         )}
 
-        {savedTrips.length === 0 ? (
-          <Row>
-            <Col>
-              <Alert variant="info">
-                You haven't saved any trips yet. Explore destinations and save your favorites!
-              </Alert>
-            </Col>
-          </Row>
-        ) : (
+        {activeTab === 'itineraries' && (
           <>
-            <Row className="mb-3">
-              <Col>
-                <p><strong>Total Saved Trips:</strong> {savedTrips.length}</p>
-                <Button variant="danger" size="sm" onClick={handleClearAll}>
-                  Clear All Trips
-                </Button>
-              </Col>
-            </Row>
-            <Row>
-              {savedTrips.map((trip, index) => (
-                <Col md={6} lg={4} key={index} className="mb-4">
-                  <Card className="h-100 shadow">
-                    {trip.images && trip.images.length > 0 ? (
-                      <ImageCarousel images={trip.images} />
-                    ) : trip.image ? (
-                      <Card.Img variant="top" src={trip.image} alt={trip.city} style={{ height: '200px', objectFit: 'cover' }} />
-                    ) : null}
-                    <Card.Body>
-                      <Card.Title>{trip.city}, {trip.country}</Card.Title>
-                      {trip.region && <p style={{ fontSize: '0.85rem', color: '#666' }}>{trip.region.charAt(0).toUpperCase() + trip.region.slice(1).replace('_', ' ')}</p>}
-                      <Card.Text>{trip.description}</Card.Text>
-                      <ul className="text-start small mb-3" style={{ lineHeight: '1.6' }}>
-                        {(trip.budget || trip.cost) && <li><b>Budget Level:</b> {trip.budget || trip.cost}</li>}
-                        {trip.bestFor && <li><b>Best For:</b> {trip.bestFor}</li>}
-                        {trip.idealDuration && <li><b>Ideal Duration:</b> {trip.idealDuration}</li>}
-                        {trip.attractions && <li><b>Top Attractions:</b> {trip.attractions}</li>}
-                      </ul>
-                    </Card.Body>
-                    <Card.Footer className="bg-white border-top">
-                      <Button variant="info" size="sm" onClick={() => handleOpenItineraryModal(trip)} className="me-2">
-                        📅 View/Edit Itinerary
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => handleRemoveTrip(trip.city, trip.country)}>
-                        Remove Trip
-                      </Button>
-                    </Card.Footer>
-                  </Card>
+            {!isAuthenticated && (
+              <Row className="mb-3">
+                <Col>
+                  <Alert variant="warning" dismissible>
+                    <Alert.Heading>📌 Sign In to Save Your Activity Itineraries</Alert.Heading>
+                    <p className="mb-2">
+                      You're currently viewing activity itineraries stored on this device only. They will be lost if you clear your browser data or switch devices.
+                    </p>
+                    <Button 
+                      variant="primary" 
+                      size="sm"
+                      onClick={() => navigate('/profile/login')}
+                      className="me-2"
+                    >
+                      Log In
+                    </Button>
+                    <Button 
+                      variant="success" 
+                      size="sm"
+                      onClick={() => navigate('/profile/signup')}
+                    >
+                      Sign Up
+                    </Button>
+                  </Alert>
                 </Col>
-              ))}
-            </Row>
+              </Row>
+            )}
+            {savedItineraries.length === 0 ? (
+              <Row>
+                <Col>
+                  <Alert variant="info">
+                    You haven't saved any activity itineraries yet. Generate activities from the Trip Generator!
+                  </Alert>
+                </Col>
+              </Row>
+            ) : (
+              <Row>
+                {savedItineraries.map((itinerary, index) => (
+                  <Col md={6} lg={4} key={index} className="mb-4">
+                    <Card className="h-100 shadow">
+                      <Card.Body>
+                        <Card.Title>{itinerary.city}, {itinerary.country}</Card.Title>
+                        <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                          <strong>Saved:</strong> {new Date(itinerary.savedAt).toLocaleDateString()}
+                        </p>
+                        {itinerary.title && (
+                          <p style={{ fontSize: '0.95rem', color: '#555', marginBottom: '1rem' }}>
+                            <strong>{itinerary.title}</strong>
+                          </p>
+                        )}
+                        {itinerary.duration && (
+                          <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                            <strong>Duration:</strong> {itinerary.duration} days
+                          </p>
+                        )}
+                      </Card.Body>
+                      <Card.Footer className="bg-white border-top">
+                        <Button 
+                          variant="info" 
+                          size="sm" 
+                          onClick={() => {
+                            setSelectedItinerary(itinerary);
+                            setShowFullItineraryView(true);
+                          }}
+                          className="me-2"
+                        >
+                          👁️ View Full Itinerary
+                        </Button>
+                        <Button 
+                          variant="danger" 
+                          size="sm"
+                          onClick={() => setShowDeleteItineraryConfirm(index)}
+                        >
+                          Delete
+                        </Button>
+                      </Card.Footer>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            <Modal show={showDeleteItineraryConfirm !== null} onHide={() => setShowDeleteItineraryConfirm(null)} centered>
+              <Modal.Header closeButton>
+                <Modal.Title>Delete Itinerary</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                Are you sure you want to delete this itinerary? This action cannot be undone.
+              </Modal.Body>
+              <Modal.Footer>
+                <Button variant="secondary" onClick={() => setShowDeleteItineraryConfirm(null)}>
+                  Cancel
+                </Button>
+                <Button 
+                  variant="danger" 
+                  onClick={() => handleDeleteItinerary(showDeleteItineraryConfirm)}
+                >
+                  Delete
+                </Button>
+              </Modal.Footer>
+            </Modal>
           </>
         )}
       </Container>
+
+      {/* Full Itinerary Display Modal */}
+      <Modal show={showFullItineraryView} onHide={() => {
+        setShowFullItineraryView(false);
+        setSelectedItinerary(null);
+      }} centered size="xl">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {selectedItinerary ? `Activity Itinerary - ${selectedItinerary.city}, ${selectedItinerary.country}` : 'Activity Itinerary'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+          {selectedItinerary && <ItineraryDisplay itinerary={selectedItinerary} />}
+        </Modal.Body>
+      </Modal>
 
       {/* Itinerary Modal */}
       <Modal show={showItineraryModal} onHide={handleCloseItineraryModal} centered size="xl">
@@ -448,12 +661,19 @@ const MyTrips = () => {
               )}
               <div className="mt-4">
                 <Button 
+                  variant="success" 
+                  onClick={handleSaveItinerary}
+                  className="w-100 mb-2"
+                >
+                  💾 Save Activities
+                </Button>
+                <Button 
                   variant="secondary" 
                   onClick={() => {
                     setItineraryItems([]);
                     setSelectedItems(new Set());
                   }}
-                  className="w-100 mb-2"
+                  className="w-100"
                 >
                   Generate Another Itinerary
                 </Button>
