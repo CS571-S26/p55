@@ -54,9 +54,10 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
 
   const handleGenerateActivity = async () => {
     setLoadingActivity(true);
+    console.log('🎯 Starting activity generation for:', dest.city);
     try {
       const prompt = `Create a detailed list of recommended activities for ${dest.city}, ${dest.country}. 
-      The user's preferences: ${itineraryInput || 'General exploration'}.
+      The user's preferences: ${activityInput || 'General exploration'}.
       The destination is best for: ${dest.bestFor || 'General tourism'}.
       Ideal duration: ${dest.idealDuration || 'Flexible'}.
       Budget level: ${dest.budget || 'Not specified'}.
@@ -65,6 +66,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
       Return ONLY a valid JSON array with objects containing: title (string - activity name), location (string - specific attraction or landmark name), activities (array of strings with specific recommendations).
       Example: [{"title":"Explore the Eiffel Tower","location":"Eiffel Tower","activities":["Take the elevator to the top","Enjoy panoramic city views","Visit the gift shop"]},{"title":"Visit the Louvre Museum","location":"Louvre Museum","activities":["See the Mona Lisa","Browse classical sculptures","Explore Egyptian artifacts"]}]`;
 
+      console.log('📤 Calling API endpoint:', API_BASE_URL);
       const res = await fetch(`${API_BASE_URL}/api/gemini`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,15 +76,24 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
         })
       });
 
-      if (!res.ok) throw new Error('Failed to generate activities');
+      console.log('📥 Response status:', res.status);
+      if (!res.ok) {
+        const errorData = await res.text();
+        throw new Error(`API returned ${res.status}: ${errorData}`);
+      }
       
       const data = await res.json();
+      console.log('✅ Response data received');
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      if (!text) {
+        throw new Error('No text in Gemini response');
+      }
       
       // Parse activities into items
       await parseAndEnhanceActivity(text);
     } catch (e) {
-      console.error('Error generating activities:', e);
+      console.error('❌ Error generating activities:', e);
       setActivity('Failed to generate activities. Please try again.');
       setActivityItems([]);
     }
