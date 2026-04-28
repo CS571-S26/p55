@@ -353,32 +353,21 @@ app.post('/api/user/trips', async (req, res) => {
       return res.status(400).json({ error: 'City and country are required' });
     }
 
-    // Get existing trips from user metadata
-    const existingTrips = user.user_metadata?.savedTrips || [];
-    
-    // Check if trip already exists - if so, update it; otherwise add new trip
-    const tripIndex = existingTrips.findIndex(trip => trip.city === tripData.city && trip.country === tripData.country);
-    
-    let updatedTrips;
-    if (tripIndex !== -1) {
-      // Update existing trip
-      updatedTrips = existingTrips.map((trip, idx) =>
-        idx === tripIndex ? { ...trip, ...tripData } : trip
-      );
-    } else {
-      // Add new trip
-      updatedTrips = [...existingTrips, tripData];
-    }
+    // Upsert trip into Supabase table
+    const { data, error } = await supabase
+      .from('user_trips')
+      .upsert({
+        user_id: user.id,
+        city: tripData.city,
+        country: tripData.country,
+        trip_data: tripData
+      }, {
+        onConflict: 'user_id,city,country'
+      })
+      .select();
 
-    // Save to Supabase user_metadata using admin API
-    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        savedTrips: updatedTrips
-      }
-    });
-
-    if (updateError) {
-      return res.status(400).json({ error: updateError.message });
+    if (error) {
+      return res.status(400).json({ error: error.message });
     }
 
     res.json({ success: true, message: 'Trip saved successfully', trip: tripData });
@@ -403,8 +392,18 @@ app.get('/api/user/trips', async (req, res) => {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    // Retrieve saved trips from user metadata
-    const savedTrips = user.user_metadata?.savedTrips || [];
+    // Fetch saved trips from Supabase table
+    const { data: trips, error } = await supabase
+      .from('user_trips')
+      .select('trip_data')
+      .eq('user_id', user.id);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    // Extract trip_data from each row
+    const savedTrips = trips.map(row => row.trip_data);
 
     res.json(savedTrips);
   } catch (e) {
@@ -430,21 +429,16 @@ app.delete('/api/user/trips/:city/:country', async (req, res) => {
 
     const { city, country } = req.params;
 
-    // Get existing trips from user metadata
-    const existingTrips = user.user_metadata?.savedTrips || [];
-    
-    // Filter out the trip to delete
-    const updatedTrips = existingTrips.filter(trip => !(trip.city === city && trip.country === country));
+    // Delete trip from Supabase table
+    const { error } = await supabase
+      .from('user_trips')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('city', city)
+      .eq('country', country);
 
-    // Save to Supabase user_metadata using admin API
-    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        savedTrips: updatedTrips
-      }
-    });
-
-    if (updateError) {
-      return res.status(400).json({ error: updateError.message });
+    if (error) {
+      return res.status(400).json({ error: error.message });
     }
 
     res.json({ success: true, message: 'Trip removed successfully' });
@@ -471,25 +465,23 @@ app.post('/api/user/itineraries', async (req, res) => {
 
     const itineraryData = req.body;
 
-    if (!itineraryData.city || !itineraryData.country) {
-      return res.status(400).json({ error: 'City and country are required' });
+    if (!itineraryData.title) {
+      return res.status(400).json({ error: 'Itinerary title is required' });
     }
 
-    // Get existing itineraries from user metadata
-    const existingItineraries = user.user_metadata?.savedItineraries || [];
-    
-    // Add new itinerary
-    const updatedItineraries = [...existingItineraries, itineraryData];
+    // Insert itinerary into Supabase table
+    const { data, error } = await supabase
+      .from('user_itineraries')
+      .insert({
+        user_id: user.id,
+        title: itineraryData.title,
+        itinerary_data: itineraryData,
+        created_at: new Date().toISOString()
+      })
+      .select();
 
-    // Save to Supabase user_metadata using admin API
-    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        savedItineraries: updatedItineraries
-      }
-    });
-
-    if (updateError) {
-      return res.status(400).json({ error: updateError.message });
+    if (error) {
+      return res.status(400).json({ error: error.message });
     }
 
     res.json({ success: true, message: 'Itinerary saved successfully', itinerary: itineraryData });
@@ -514,8 +506,19 @@ app.get('/api/user/itineraries', async (req, res) => {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    // Retrieve saved itineraries from user metadata
-    const savedItineraries = user.user_metadata?.savedItineraries || [];
+    // Fetch saved itineraries from Supabase table
+    const { data: itineraries, error } = await supabase
+      .from('user_itineraries')
+      .select('itinerary_data')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    // Extract itinerary_data from each row
+    const savedItineraries = itineraries.map(row => row.itinerary_data);
 
     res.json(savedItineraries);
   } catch (e) {
@@ -539,31 +542,17 @@ app.delete('/api/user/itineraries/:index', async (req, res) => {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    const index = parseInt(req.params.index, 10);
+    const id = req.params.index;
 
-    if (isNaN(index)) {
-      return res.status(400).json({ error: 'Invalid index' });
-    }
+    // Delete itinerary from Supabase table using id
+    const { error } = await supabase
+      .from('user_itineraries')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
 
-    // Get existing itineraries from user metadata
-    const existingItineraries = user.user_metadata?.savedItineraries || [];
-    
-    if (index < 0 || index >= existingItineraries.length) {
-      return res.status(404).json({ error: 'Itinerary not found' });
-    }
-    
-    // Filter out the itinerary to delete
-    const updatedItineraries = existingItineraries.filter((_, i) => i !== index);
-
-    // Save to Supabase user_metadata using admin API
-    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        savedItineraries: updatedItineraries
-      }
-    });
-
-    if (updateError) {
-      return res.status(400).json({ error: updateError.message });
+    if (error) {
+      return res.status(400).json({ error: error.message });
     }
 
     res.json({ success: true, message: 'Itinerary removed successfully' });
