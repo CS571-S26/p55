@@ -194,9 +194,9 @@ const MyTrips = () => {
 
   const handleOpenItineraryModal = (trip) => {
     setSelectedTrip(trip);
-    if (trip.selectedItinerary && trip.selectedItinerary.length > 0) {
-      setItineraryItems(trip.selectedItinerary);
-      setSelectedItems(new Set(trip.selectedItinerary.map(item => item.id)));
+    if (trip.selectedActivity && trip.selectedActivity.length > 0) {
+      setItineraryItems(trip.selectedActivity);
+      setSelectedItems(new Set(trip.selectedActivity.map(item => item.id)));
     } else {
       setItineraryItems([]);
       setSelectedItems(new Set());
@@ -313,7 +313,7 @@ const MyTrips = () => {
       const selectedActivities = itineraryItems.filter(item => selectedItems.has(item.id));
       const updatedTrip = {
         ...selectedTrip,
-        selectedItinerary: selectedActivities
+        selectedActivity: selectedActivities
       };
 
       const authToken = localStorage.getItem('authToken');
