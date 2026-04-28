@@ -140,6 +140,109 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.post('/api/auth/change-password', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verify JWT token with Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ error: 'New password required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Update password using admin API
+    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
+      password: newPassword
+    });
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Use Supabase's built-in password reset email
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.REDIRECT_URL || 'http://localhost:5173'}/profile/reset-password`
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ success: true, message: 'Password reset email sent. Check your inbox for instructions.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Verify the recovery token and update password
+    const { data, error: sessionError } = await supabase.auth.verifyOtp({
+      type: 'recovery',
+      token: token,
+      email: '' // Empty string as per Supabase docs when using token
+    });
+
+    if (sessionError || !data.session) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    // Update password using the verified session
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      data.session.user.id,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({ success: true, message: 'Password reset successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/user/preferences', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;

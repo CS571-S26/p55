@@ -9,6 +9,13 @@ const ProfileLogin = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const syncLocalStorageToDatabase = async (authToken) => {
     try {
@@ -66,6 +73,47 @@ const ProfileLogin = () => {
     } catch (err) {
       console.error('Error during sync:', err);
       // Don't throw error - sync is non-critical
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+
+    if (!forgotEmail) {
+      setForgotError('Please enter your email address');
+      return;
+    }
+
+    setForgotLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setForgotError(data.error || 'Failed to send reset email');
+        return;
+      }
+
+      setForgotSuccess('Password reset email sent! Check your inbox for instructions.');
+      setForgotEmail('');
+      setTimeout(() => {
+        setShowForgotModal(false);
+        setForgotSuccess('');
+      }, 3000);
+    } catch (err) {
+      setForgotError('Error sending reset email: ' + err.message);
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -158,6 +206,16 @@ const ProfileLogin = () => {
         </button>
       </form>
       <div className="mt-3 text-center">
+        <p className="mb-2">
+          <button
+            type="button"
+            className="btn btn-link"
+            onClick={() => setShowForgotModal(true)}
+            style={{ padding: 0, fontSize: '0.9rem' }}
+          >
+            Forgot Password?
+          </button>
+        </p>
         <p className="mb-0">Don't have an account?</p>
         <button
           type="button"
@@ -167,6 +225,81 @@ const ProfileLogin = () => {
           Sign Up
         </button>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Reset Password</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowForgotModal(false);
+                    setForgotError('');
+                    setForgotSuccess('');
+                    setForgotEmail('');
+                  }}
+                ></button>
+              </div>
+              <form onSubmit={handleForgotPassword}>
+                <div className="modal-body">
+                  {forgotError && (
+                    <div className="alert alert-danger" role="alert" aria-live="polite">
+                      {forgotError}
+                    </div>
+                  )}
+                  {forgotSuccess && (
+                    <div className="alert alert-success" role="alert" aria-live="polite">
+                      {forgotSuccess}
+                    </div>
+                  )}
+                  <p className="text-muted">
+                    Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                  <div className="mb-3">
+                    <label htmlFor="forgotEmail" className="form-label">Email address</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      id="forgotEmail"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                      disabled={forgotLoading}
+                      aria-required="true"
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowForgotModal(false);
+                      setForgotError('');
+                      setForgotSuccess('');
+                      setForgotEmail('');
+                    }}
+                    disabled={forgotLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={forgotLoading}
+                  >
+                    {forgotLoading ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -9,6 +9,7 @@ import Itinerary from './components/content/Itinerary';
 import ProfileMain from './components/content/ProfileMain';
 import ProfileLogin from './components/content/ProfileLogin';
 import ProfileSignup from './components/content/ProfileSignup';
+import ProfileResetPassword from './components/content/ProfileResetPassword';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './css/HomePage.css';
 
@@ -25,6 +26,7 @@ root.render(
           <Route path="profile" element={<ProfileMain />} />
           <Route path="profile/login" element={<ProfileLogin />} />
           <Route path="profile/signup" element={<ProfileSignup />} />
+          <Route path="profile/reset-password" element={<ProfileResetPassword />} />
         </Route>
         {/* Redirect any unknown route to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -32,3 +34,4 @@ root.render(
     </HashRouter>
   </React.StrictMode>
 );
+

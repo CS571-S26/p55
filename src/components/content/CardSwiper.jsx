@@ -28,10 +28,10 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
 
   const handleSwipe = (direction) => {
     if (direction === 'right') {
-      const selectedItinerary = itineraryItems.filter(item => selectedItems.has(item.id));
+      const selectedActivity = activityItems.filter(item => selectedItems.has(item.id));
       const enhancedDestination = {
         ...destinations[current],
-        selectedItinerary: selectedItinerary
+        selectedActivity: selectedActivity
       };
       onSwipeRight(enhancedDestination);
     } else {
@@ -131,7 +131,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
         })
       );
 
-      setItineraryItems(enhancedItems);
+      setActivityItems(enhancedItems);
       setSelectedItems(new Set(enhancedItems.map(item => item.id)));
       setActivity('parsed'); // Mark as having valid activities
     } catch (e) {
@@ -264,7 +264,7 @@ const CardSwiper = ({ destinations, initialIndex = 0, onIndexChange, onSwipeRigh
                 disabled={loadingActivity}
                 className="w-100"
               >
-                {loadingItinerary ? (
+                {loadingActivity ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
                     Generating Activities...
