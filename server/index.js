@@ -111,7 +111,12 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.json({ user: data.user, session: data.session });
+    // Return only the access token (not the entire session) to keep it small
+    res.json({ 
+      user: data.user, 
+      access_token: data.session?.access_token,
+      refresh_token: data.session?.refresh_token
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -134,7 +139,12 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.json({ user: data.user, session: data.session });
+    // Return only the access token (not the entire session) to keep it small
+    res.json({ 
+      user: data.user, 
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

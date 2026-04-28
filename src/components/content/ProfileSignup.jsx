@@ -40,12 +40,16 @@ const ProfileSignup = () => {
         return;
       }
 
-      // Store JWT token from Supabase session
-      if (data.session?.access_token) {
-        localStorage.setItem('authToken', data.session.access_token);
+      // Store JWT token from backend
+      if (data.access_token) {
+        const tokenSize = data.access_token.length;
+        console.log('🔐 Auth Token Size:', tokenSize, 'characters');
+        console.log('✅ Token size is reasonable:', tokenSize < 2000 ? 'Yes' : 'No');
+        
+        localStorage.setItem('authToken', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
         console.log('Stored in localStorage:', {
-          authToken: data.session.access_token,
+          tokenLength: data.access_token.length,
           user: data.user
         });
       }
