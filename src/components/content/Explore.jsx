@@ -5,42 +5,55 @@ import destinationsData from '../../assets/Worldwide_Travel_Cities.json';
 import API_BASE_URL from '../../config/api';
 
 const Explore = () => {
-  const [input, setInput] = useState(() => localStorage.getItem('exploreInput') || '');
+  // const [input, setInput] = useState(() => localStorage.getItem('exploreInput') || '');
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState(() => {
-    const saved = localStorage.getItem('exploreRecommendations');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [showSwiper, setShowSwiper] = useState(() => {
-    const saved = localStorage.getItem('exploreRecommendations');
-    return saved ? JSON.parse(saved).length > 0 : false;
-  });
-  const [destinationBatchIndex, setDestinationBatchIndex] = useState(() => {
-    const saved = localStorage.getItem('exploreDestinationBatchIndex');
-    return saved ? parseInt(saved) : 0;
-  });
-  const [currentRecommendationIndex, setCurrentRecommendationIndex] = useState(() => {
-    const saved = localStorage.getItem('exploreCurrentRecommendationIndex');
-    return saved ? parseInt(saved) : 0;
-  });
+  // const [recommendations, setRecommendations] = useState(() => {
+  //   const saved = localStorage.getItem('exploreRecommendations');
+  //   return saved ? JSON.parse(saved) : [];
+  // });
+  const [recommendations, setRecommendations] = useState([]);
+  // const [showSwiper, setShowSwiper] = useState(() => {
+  //   const saved = localStorage.getItem('exploreRecommendations');
+  //   return saved ? JSON.parse(saved).length > 0 : false;
+  // });
+  const [showSwiper, setShowSwiper] = useState(false);
+  // const [destinationBatchIndex, setDestinationBatchIndex] = useState(() => {
+  //   const saved = localStorage.getItem('exploreDestinationBatchIndex');
+  //   return saved ? parseInt(saved) : 0;
+  // });
+  const [destinationBatchIndex, setDestinationBatchIndex] = useState(0);
+  // const [currentRecommendationIndex, setCurrentRecommendationIndex] = useState(() => {
+  //   const saved = localStorage.getItem('exploreCurrentRecommendationIndex');
+  //   return saved ? parseInt(saved) : 0;
+  // });
+  const [currentRecommendationIndex, setCurrentRecommendationIndex] = useState(0);
   const BATCH_SIZE = 40;
 
   // Save to localStorage whenever these change
-  useEffect(() => {
-    localStorage.setItem('exploreInput', input);
-  }, [input]);
+  // useEffect(() => {
+  //   localStorage.setItem('exploreInput', input);
+  // }, [input]);
+  //
+  // useEffect(() => {
+  //   localStorage.setItem('exploreRecommendations', JSON.stringify(recommendations));
+  // }, [recommendations]);
+  //
+  // useEffect(() => {
+  //   localStorage.setItem('exploreDestinationBatchIndex', destinationBatchIndex.toString());
+  // }, [destinationBatchIndex]);
+  //
+  // useEffect(() => {
+  //   localStorage.setItem('exploreCurrentRecommendationIndex', currentRecommendationIndex.toString());
+  // }, [currentRecommendationIndex]);
 
+  // Clear any stale Explore persistence keys from previous versions.
   useEffect(() => {
-    localStorage.setItem('exploreRecommendations', JSON.stringify(recommendations));
-  }, [recommendations]);
-
-  useEffect(() => {
-    localStorage.setItem('exploreDestinationBatchIndex', destinationBatchIndex.toString());
-  }, [destinationBatchIndex]);
-
-  useEffect(() => {
-    localStorage.setItem('exploreCurrentRecommendationIndex', currentRecommendationIndex.toString());
-  }, [currentRecommendationIndex]);
+    localStorage.removeItem('exploreInput');
+    localStorage.removeItem('exploreRecommendations');
+    localStorage.removeItem('exploreDestinationBatchIndex');
+    localStorage.removeItem('exploreCurrentRecommendationIndex');
+  }, []);
 
   // Helper to call backend Gemini proxy
   async function getGeminiRecommendations(userInput, startIndex = 0) {

@@ -15,6 +15,7 @@ const Itinerary = () => {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [tripName, setTripName] = useState('');
   const [saveMode, setSaveMode] = useState('itinerary'); // 'trip' or 'itinerary'
+  const [isSaved, setIsSaved] = useState(false);
 
   const handleGenerateItinerary = async () => {
     if (!location.trim()) {
@@ -25,6 +26,7 @@ const Itinerary = () => {
     setError('');
     setLoading(true);
     setItinerary(null);
+    setIsSaved(false);
 
     try {
       const prompt = `Create a detailed ${duration}-day itinerary for a trip to ${location} (${locationType}).
@@ -111,6 +113,7 @@ Make the itinerary realistic, practical, and personalized to the interests provi
         localStorage.setItem('savedItineraries', JSON.stringify(savedItineraries));
         setShowSaveModal(false);
         setError('');
+        setIsSaved(true);
         alert('Activity itinerary saved locally!');
         return;
       }
@@ -136,6 +139,7 @@ Make the itinerary realistic, practical, and personalized to the interests provi
         if (response.ok) {
           setShowSaveModal(false);
           setError('');
+          setIsSaved(true);
           alert('Activity itinerary saved successfully!');
         } else {
           throw new Error('Failed to save itinerary');
@@ -161,6 +165,7 @@ Make the itinerary realistic, practical, and personalized to the interests provi
       localStorage.setItem('savedTrips', JSON.stringify(savedTrips));
       setShowSaveModal(false);
       setError('');
+      setIsSaved(true);
       alert('Trip saved locally!');
       return;
     }
@@ -183,6 +188,7 @@ Make the itinerary realistic, practical, and personalized to the interests provi
       if (response.ok) {
         setShowSaveModal(false);
         setError('');
+        setIsSaved(true);
         alert('Trip saved successfully!');
       } else {
         throw new Error('Failed to save trip');
@@ -300,15 +306,16 @@ Make the itinerary realistic, practical, and personalized to the interests provi
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <Button
-                    variant="outline-info"
+                    variant={isSaved ? "success" : "outline-info"}
                     onClick={() => {
                       setSaveMode('itinerary');
                       setTripName(`${itinerary.location} - ${duration} Days`);
                       setShowSaveModal(true);
                     }}
+                    disabled={isSaved}
                     className="btn-save"
                   >
-                    📅 Save Itinerary
+                    {isSaved ? '✓ Saved' : '📅 Save Itinerary'}
                   </Button>
                 </div>
               </div>
