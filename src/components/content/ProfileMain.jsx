@@ -17,9 +17,15 @@ const ProfileMain = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData && userData !== 'undefined') {
+        setUser(JSON.parse(userData));
+      }
+    } catch (err) {
+      console.error('Error parsing user data from localStorage:', err);
+      localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
     }
   }, []);
 

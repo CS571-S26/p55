@@ -111,11 +111,20 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    // Return only the access token (not the entire session) to keep it small
+    // Ensure user data exists before accessing properties
+    if (!data.user) {
+      return res.status(500).json({ error: 'User creation failed' });
+    }
+
+    // Return only essential user fields and tokens to keep JWT small
+    // Note: For signup, session may be null if email verification is required
     res.json({ 
-      user: data.user, 
-      access_token: data.session?.access_token,
-      refresh_token: data.session?.refresh_token
+      user: {
+        id: data.user.id,
+        email: data.user.email
+      },
+      access_token: data.session?.access_token || null,
+      refresh_token: data.session?.refresh_token || null
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -139,9 +148,17 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    // Return only the access token (not the entire session) to keep it small
+    // Ensure user and session data exist before accessing properties
+    if (!data.user || !data.session) {
+      return res.status(500).json({ error: 'Login failed: incomplete session data' });
+    }
+
+    // Return only essential user fields and tokens to keep JWT small
     res.json({ 
-      user: data.user, 
+      user: {
+        id: data.user.id,
+        email: data.user.email
+      },
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token
     });

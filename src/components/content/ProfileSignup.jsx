@@ -40,24 +40,36 @@ const ProfileSignup = () => {
         return;
       }
 
-      // Store JWT token from backend
-      if (data.access_token) {
-        const tokenSize = data.access_token.length;
-        console.log('🔐 Auth Token Size:', tokenSize, 'characters');
-        console.log('✅ Token size is reasonable:', tokenSize < 2000 ? 'Yes' : 'No');
-        
-        localStorage.setItem('authToken', data.access_token);
+      // Store user data from backend
+      if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('User created:', data.user);
+        
+        // If access token is available, store it (for immediate login)
+        if (data.access_token) {
+          const tokenSize = data.access_token.length;
+          console.log('🔐 Auth Token Size:', tokenSize, 'characters');
+          console.log('✅ Token size is reasonable:', tokenSize < 2000 ? 'Yes' : 'No');
+          localStorage.setItem('authToken', data.access_token);
+        }
+        
         console.log('Stored in localStorage:', {
-          tokenLength: data.access_token.length,
-          user: data.user
+          user: data.user,
+          hasToken: !!data.access_token
         });
+      } else {
+        throw new Error('Missing user data in response');
       }
 
       setEmail('');
       setPassword('');
       setConfirmPassword('');
       setSuccess('Check your email to confirm your account before logging in!');
+
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        navigate('/profile/login');
+      }, 2000);
     } catch (err) {
       setError('Network error: ' + err.message);
     } finally {

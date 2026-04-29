@@ -141,7 +141,7 @@ const ProfileLogin = () => {
       }
 
       // Store JWT token from backend
-      if (data.access_token) {
+      if (data.access_token && data.user) {
         const tokenSize = data.access_token.length;
         console.log('🔐 Auth Token Size:', tokenSize, 'characters');
         console.log('✅ Token size is reasonable:', tokenSize < 2000 ? 'Yes' : 'No');
@@ -152,6 +152,8 @@ const ProfileLogin = () => {
 
         // Sync localStorage data to database
         await syncLocalStorageToDatabase(data.access_token);
+      } else {
+        throw new Error('Missing access token or user data in response');
       }
 
       setEmail('');
