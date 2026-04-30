@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const { createClient } = require('@supabase/supabase-js');
-const { v4: uuidv4 } = require('uuid');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -487,19 +486,13 @@ app.post('/api/user/itineraries', async (req, res) => {
       return res.status(400).json({ error: 'Itinerary title is required' });
     }
 
-    // Generate unique ID and add to itinerary data
-    const itineraryWithId = {
-      ...itineraryData,
-      id: uuidv4()
-    };
-
     // Insert itinerary into Supabase table
     const { data, error } = await supabase
       .from('user_itineraries')
       .insert({
         user_id: user.id,
         title: itineraryData.title,
-        itinerary_data: itineraryWithId,
+        itinerary_data: itineraryData,
         created_at: new Date().toISOString()
       })
       .select();
@@ -512,7 +505,7 @@ app.post('/api/user/itineraries', async (req, res) => {
     const savedItinerary = data && data.length > 0 ? {
       ...data[0].itinerary_data,
       _id: data[0].id
-    } : itineraryWithId;
+    } : itineraryData;
 
     res.json({ success: true, message: 'Itinerary saved successfully', itinerary: savedItinerary });
   } catch (e) {

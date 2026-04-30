@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Form, Button, Card, Spinner, Alert, Modal, Badge } from 'react-bootstrap';
 import API_BASE_URL from '../../config/api';
-import { generateUUID } from '../../utils/generateId';
 import '../../css/Itinerary.css';
 
 const Itinerary = () => {
@@ -104,7 +103,6 @@ Make the itinerary realistic, practical, and personalized to the interests provi
         // Save locally if not authenticated
         const itineraryToSave = {
           ...itinerary,
-          id: generateUUID(),
           city: itinerary.location,
           country: locationType === 'continent' ? 'Multiple Countries' : itinerary.location,
           title: tripName,
