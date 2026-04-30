@@ -357,9 +357,9 @@ const MyTrips = () => {
     const authToken = localStorage.getItem('authToken');
 
     try {
-      // If authenticated, delete from server first
-      if (authToken && itineraryToDelete?.id) {
-        const response = await fetch(`${API_BASE_URL}/api/user/itineraries/${itineraryToDelete.id}`, {
+      // If authenticated, delete from server first using the database ID
+      if (authToken && itineraryToDelete?._id) {
+        const response = await fetch(`${API_BASE_URL}/api/user/itineraries/${itineraryToDelete._id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',

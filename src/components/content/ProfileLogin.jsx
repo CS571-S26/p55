@@ -48,6 +48,7 @@ const ProfileLogin = () => {
       }
 
       // Sync itineraries to database
+      const syncedItineraries = [];
       for (const itinerary of savedItineraries) {
         try {
           const response = await fetch(`${API_BASE_URL}/api/user/itineraries`, {
@@ -59,17 +60,31 @@ const ProfileLogin = () => {
             body: JSON.stringify(itinerary)
           });
 
-          if (!response.ok) {
+          if (response.ok) {
+            const responseData = await response.json();
+            // Add the synced itinerary with database ID to our list
+            if (responseData.itinerary) {
+              syncedItineraries.push(responseData.itinerary);
+            }
+          } else {
             const errorData = await response.json();
             console.warn('Failed to sync itinerary:', errorData);
-            // Continue with other itineraries even if one fails
+            // Keep the original itinerary if sync fails
+            syncedItineraries.push(itinerary);
           }
         } catch (itineraryError) {
           console.error('Error syncing itinerary:', itineraryError);
+          // Keep the original itinerary if sync fails
+          syncedItineraries.push(itinerary);
         }
       }
 
-      console.log('Sync completed: ' + savedTrips.length + ' trips and ' + savedItineraries.length + ' itineraries synced');
+      // Update localStorage with synced itineraries that now have database IDs
+      if (syncedItineraries.length > 0) {
+        localStorage.setItem('savedItineraries', JSON.stringify(syncedItineraries));
+      }
+
+      console.log('Sync completed: ' + savedTrips.length + ' trips and ' + syncedItineraries.length + ' itineraries synced');
     } catch (err) {
       console.error('Error during sync:', err);
       // Don't throw error - sync is non-critical
