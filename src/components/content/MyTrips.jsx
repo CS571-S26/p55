@@ -352,11 +352,36 @@ const MyTrips = () => {
     }
   };
 
-  const handleDeleteItinerary = (index) => {
-    const updatedItineraries = savedItineraries.filter((_, i) => i !== index);
-    setSavedItineraries(updatedItineraries);
-    localStorage.setItem('savedItineraries', JSON.stringify(updatedItineraries));
-    setShowDeleteItineraryConfirm(null);
+  const handleDeleteItinerary = async (index) => {
+    const itineraryToDelete = savedItineraries[index];
+    const authToken = localStorage.getItem('authToken');
+
+    try {
+      // If authenticated, delete from server first
+      if (authToken && itineraryToDelete?.id) {
+        const response = await fetch(`${API_BASE_URL}/api/user/itineraries/${itineraryToDelete.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete itinerary from server');
+        }
+      }
+
+      // Also update localStorage
+      const updatedItineraries = savedItineraries.filter((_, i) => i !== index);
+      setSavedItineraries(updatedItineraries);
+      localStorage.setItem('savedItineraries', JSON.stringify(updatedItineraries));
+      setShowDeleteItineraryConfirm(null);
+      alert('Itinerary deleted successfully!');
+    } catch (err) {
+      console.error('Error deleting itinerary:', err);
+      alert('Failed to delete itinerary: ' + err.message);
+    }
   };
 
   if (loading) {
